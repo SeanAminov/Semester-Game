@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Sean.Combat
@@ -8,26 +9,10 @@ namespace Sean.Combat
         [SerializeField] private EnemyEnergy energy;
         [SerializeField] private FighterVisual visual;
 
-        [Header("--- Attack Timing (seconds) ---")]
-        [SerializeField] private float telegraphDurationMin = 0.5f;
-        [SerializeField] private float telegraphDurationMax = 1.0f;
-        [SerializeField] private float attackCooldownMin = 1.5f;
-        [SerializeField] private float attackCooldownMax = 3.0f;
-        [SerializeField] private float vulnerabilityWindow = 0.2f;
-
-        [Header("--- Energy Costs ---")]
-        [SerializeField] private int attackEnergyCost = 3;
-        [SerializeField] private int attackDamage = 5;
-
-        [Header("--- Stun ---")]
-        [SerializeField] private float parryStunDuration = 1.0f;
-
-        [Header("--- Visual ---")]
-        [SerializeField] private Color hitColor = Color.red;
-        [SerializeField] private float hitFlashDuration = 0.15f;
-
         private EnemyState _state = EnemyState.Idle;
         private bool _combatActive;
+
+        private CombatRuntimeConfig Config => CombatRuntimeConfig.Instance;
 
         private enum EnemyState { Idle, Telegraphing, Attacking, Stunned, Defeated }
 
@@ -37,6 +22,7 @@ namespace Sean.Combat
             CombatEvents.OnPlayerAttackEnemy += HandlePlayerAttack;
             CombatEvents.OnCombatStarted += OnCombatStarted;
             CombatEvents.OnFighterDefeated += OnFighterDefeated;
+            CombatEvents.OnEnemyPostureBroken += HandlePostureBroken;
         }
 
         private void OnDisable()
@@ -45,6 +31,7 @@ namespace Sean.Combat
             CombatEvents.OnPlayerAttackEnemy -= HandlePlayerAttack;
             CombatEvents.OnCombatStarted -= OnCombatStarted;
             CombatEvents.OnFighterDefeated -= OnFighterDefeated;
+            CombatEvents.OnEnemyPostureBroken -= HandlePostureBroken;
         }
 
         private void OnCombatStarted()
@@ -64,49 +51,119 @@ namespace Sean.Combat
 
         private IEnumerator AttackLoop()
         {
-            // Initial delay before first attack
             yield return new WaitForSeconds(1.0f);
 
             while (_combatActive)
             {
-                // Wait for cooldown
-                float cooldown = Random.Range(attackCooldownMin, attackCooldownMax);
+                float cooldown = Random.Range(Config.EnemyAttackCooldownMin, Config.EnemyAttackCooldownMax);
                 yield return new WaitForSeconds(cooldown);
 
                 if (!_combatActive || _state != EnemyState.Idle) continue;
 
-                // Pick random direction
-                AttackDirection direction = (AttackDirection)Random.Range(0, 4);
-                float telegraphDuration = Random.Range(telegraphDurationMin, telegraphDurationMax);
+                // Decide: single attack or combo
+                if (Config.CombosEnabled && TryPickCombo(out EnemyComboData combo))
+                {
+                    yield return ExecuteCombo(combo);
+                }
+                else
+                {
+                    yield return ExecuteSingleAttack();
+                }
+            }
+        }
 
-                // Telegraph phase
+        private bool TryPickCombo(out EnemyComboData combo)
+        {
+            combo = null;
+            if (Config.Combos == null || Config.Combos.Length == 0) return false;
+
+            // Collect enabled combos
+            var enabledCombos = new List<EnemyComboData>();
+            for (int i = 0; i < Config.Combos.Length; i++)
+            {
+                if (Config.Combos[i] != null && Config.Combos[i].Enabled &&
+                    Config.Combos[i].Attacks != null && Config.Combos[i].Attacks.Length > 0)
+                {
+                    enabledCombos.Add(Config.Combos[i]);
+                }
+            }
+
+            if (enabledCombos.Count == 0) return false;
+
+            // 40% chance to use a combo when combos are enabled
+            if (Random.value > 0.4f) return false;
+
+            combo = enabledCombos[Random.Range(0, enabledCombos.Count)];
+            return true;
+        }
+
+        private IEnumerator ExecuteSingleAttack()
+        {
+            AttackDirection direction = (AttackDirection)Random.Range(0, 4);
+            float telegraphDuration = Random.Range(Config.TelegraphDurationMin, Config.TelegraphDurationMax);
+
+            _state = EnemyState.Telegraphing;
+            CombatEvents.RaiseTelegraph(direction, telegraphDuration);
+            yield return new WaitForSeconds(telegraphDuration);
+
+            if (!_combatActive) yield break;
+
+            _state = EnemyState.Attacking;
+            CombatEvents.RaiseAttackLand(direction);
+
+            yield return new WaitForSeconds(0.2f);
+
+            if (_state == EnemyState.Attacking)
+                _state = EnemyState.Idle;
+        }
+
+        private IEnumerator ExecuteCombo(EnemyComboData combo)
+        {
+            for (int i = 0; i < combo.Attacks.Length; i++)
+            {
+                if (!_combatActive || _state == EnemyState.Stunned || _state == EnemyState.Defeated)
+                    yield break;
+
+                var attack = combo.Attacks[i];
+
                 _state = EnemyState.Telegraphing;
-                CombatEvents.RaiseTelegraph(direction, telegraphDuration);
-                yield return new WaitForSeconds(telegraphDuration);
+                CombatEvents.RaiseTelegraph(attack.Direction, attack.TelegraphDuration);
+                yield return new WaitForSeconds(attack.TelegraphDuration);
+
+                if (!_combatActive || _state == EnemyState.Stunned) yield break;
+
+                _state = EnemyState.Attacking;
+                CombatEvents.RaiseAttackLand(attack.Direction);
+
+                yield return new WaitForSeconds(0.15f);
 
                 if (!_combatActive) yield break;
 
-                // Attack lands
-                _state = EnemyState.Attacking;
-                energy.ModifyEnergy(-attackEnergyCost);
-                CombatEvents.RaiseAttackLand(direction);
-
-                // Brief vulnerability window after attack
-                yield return new WaitForSeconds(vulnerabilityWindow);
-
-                if (_state == EnemyState.Attacking)
+                // Interval before next combo hit
+                if (i < combo.Attacks.Length - 1)
+                {
                     _state = EnemyState.Idle;
+                    yield return new WaitForSeconds(attack.IntervalAfter);
+                }
             }
+
+            if (_state == EnemyState.Attacking)
+                _state = EnemyState.Idle;
         }
 
         private void HandleDefenseResult(CombatResult result, AttackDirection direction)
         {
             if (result == CombatResult.Parry)
             {
-                // Enemy gets stunned on parry
                 StopAllCoroutines();
-                StartCoroutine(StunCoroutine(parryStunDuration));
+                StartCoroutine(StunCoroutine(Config.ParryStunDuration));
             }
+        }
+
+        private void HandlePostureBroken(float stunDuration)
+        {
+            StopAllCoroutines();
+            StartCoroutine(StunCoroutine(stunDuration));
         }
 
         private IEnumerator StunCoroutine(float duration)
@@ -127,7 +184,7 @@ namespace Sean.Combat
             if (!_combatActive || _state == EnemyState.Defeated) return;
 
             energy.ModifyEnergy(-damage);
-            visual.FlashColor(hitColor, hitFlashDuration);
+            visual.FlashColor(Color.red, Config.HitFlashDuration);
             CombatEvents.RaiseNotification($"-{damage}", transform.position);
         }
     }

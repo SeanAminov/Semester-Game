@@ -13,7 +13,6 @@ namespace Sean.Combat.Editor
         [MenuItem("Combat Demo/Build Scene")]
         public static void BuildCombatDemoScene()
         {
-            // Create new scene
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             // === Camera ===
@@ -33,6 +32,10 @@ namespace Sean.Combat.Editor
             var light2d = lightObj.AddComponent<Light2D>();
             light2d.lightType = Light2D.LightType.Global;
 
+            // === Runtime Config (Singleton) ===
+            var configObj = new GameObject("CombatRuntimeConfig");
+            configObj.AddComponent<CombatRuntimeConfig>();
+
             // === Player (white square) ===
             var playerObj = new GameObject("Player");
             playerObj.transform.position = new Vector3(-3, 0, 0);
@@ -43,11 +46,12 @@ namespace Sean.Combat.Editor
 
             var playerEnergy = playerObj.AddComponent<PlayerEnergy>();
             var playerVisual = playerObj.AddComponent<FighterVisual>();
+            var playerCritMeter = playerObj.AddComponent<PlayerCritMeter>();
             var playerController = playerObj.AddComponent<PlayerCombatController>();
 
-            // Wire player serialized fields
             SetSerializedField(playerController, "energy", playerEnergy);
             SetSerializedField(playerController, "visual", playerVisual);
+            SetSerializedField(playerController, "critMeter", playerCritMeter);
             SetSerializedField(playerVisual, "spriteRenderer", playerSR);
 
             // === Enemy (white circle) ===
@@ -63,15 +67,15 @@ namespace Sean.Combat.Editor
             var enemyController = enemyObj.AddComponent<EnemyCombatController>();
             var telegraph = enemyObj.AddComponent<EnemyAttackTelegraph>();
             var dirIndicator = enemyObj.AddComponent<DirectionIndicator>();
+            enemyObj.AddComponent<EnemyPostureMeter>();
 
-            // Wire enemy serialized fields
             SetSerializedField(enemyController, "energy", enemyEnergy);
             SetSerializedField(enemyController, "visual", enemyVisual);
             SetSerializedField(enemyVisual, "spriteRenderer", enemySR);
             SetSerializedField(telegraph, "spriteRenderer", enemySR);
             SetSerializedField(telegraph, "directionIndicator", dirIndicator);
 
-            // === Direction arrows (children of enemy) ===
+            // Direction arrows
             var arrowUp = CreateArrow("ArrowUp", enemyObj.transform, new Vector3(0, 1.5f, 0), 0f);
             var arrowDown = CreateArrow("ArrowDown", enemyObj.transform, new Vector3(0, -1.5f, 0), 180f);
             var arrowLeft = CreateArrow("ArrowLeft", enemyObj.transform, new Vector3(-1.5f, 0, 0), 90f);
@@ -86,15 +90,26 @@ namespace Sean.Combat.Editor
             var canvasObj = new GameObject("CombatCanvas");
             var canvas = canvasObj.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 10;
             var scaler = canvasObj.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920, 1080);
             canvasObj.AddComponent<GraphicRaycaster>();
 
-            // === Player Energy Bar ===
-            var playerBarObj = CreateEnergyBar("PlayerEnergyBar", canvasObj.transform,
-                new Color(0.2f, 0.8f, 1f), "PLAYER", FighterType.Player);
+            // ==========================================
+            // === PLAY PANEL (combat UI, initially hidden) ===
+            // ==========================================
+            var playPanel = new GameObject("PlayPanel");
+            playPanel.transform.SetParent(canvasObj.transform, false);
+            var playPanelRect = playPanel.AddComponent<RectTransform>();
+            playPanelRect.anchorMin = Vector2.zero;
+            playPanelRect.anchorMax = Vector2.one;
+            playPanelRect.offsetMin = Vector2.zero;
+            playPanelRect.offsetMax = Vector2.zero;
 
+            // Player Energy Bar
+            var playerBarObj = CreateEnergyBar("PlayerEnergyBar", playPanel.transform,
+                new Color(0.2f, 0.8f, 1f), "PLAYER", FighterType.Player);
             var playerBarRect = playerBarObj.GetComponent<RectTransform>();
             playerBarRect.anchorMin = new Vector2(0, 0);
             playerBarRect.anchorMax = new Vector2(0, 0);
@@ -102,10 +117,9 @@ namespace Sean.Combat.Editor
             playerBarRect.anchoredPosition = new Vector2(20, 20);
             playerBarRect.sizeDelta = new Vector2(350, 60);
 
-            // === Enemy Energy Bar ===
-            var enemyBarObj = CreateEnergyBar("EnemyEnergyBar", canvasObj.transform,
+            // Enemy Energy Bar
+            var enemyBarObj = CreateEnergyBar("EnemyEnergyBar", playPanel.transform,
                 new Color(1f, 0.3f, 0.3f), "ENEMY", FighterType.Enemy);
-
             var enemyBarRect = enemyBarObj.GetComponent<RectTransform>();
             enemyBarRect.anchorMin = new Vector2(1, 0);
             enemyBarRect.anchorMax = new Vector2(1, 0);
@@ -113,18 +127,47 @@ namespace Sean.Combat.Editor
             enemyBarRect.anchoredPosition = new Vector2(-20, 20);
             enemyBarRect.sizeDelta = new Vector2(350, 60);
 
-            // === Notification Container ===
+            // === Posture Meter Bar ===
+            var postureMeterObj = CreateMeterBar("PostureMeter", playPanel.transform,
+                new Color(1f, 0.6f, 0.1f), "POSTURE");
+            var postureMeterRect = postureMeterObj.GetComponent<RectTransform>();
+            postureMeterRect.anchorMin = new Vector2(1, 0);
+            postureMeterRect.anchorMax = new Vector2(1, 0);
+            postureMeterRect.pivot = new Vector2(1, 0);
+            postureMeterRect.anchoredPosition = new Vector2(-20, 90);
+            postureMeterRect.sizeDelta = new Vector2(350, 45);
+
+            var postureUI = postureMeterObj.AddComponent<PostureMeterUI>();
+            SetSerializedField(postureUI, "fillImage", postureMeterObj.transform.Find("Fill").GetComponent<Image>());
+            SetSerializedField(postureUI, "valueText", postureMeterObj.transform.Find("ValueText").GetComponent<TextMeshProUGUI>());
+            SetSerializedField(postureUI, "meterRoot", postureMeterObj);
+
+            // === Crit Meter Bar ===
+            var critMeterObj = CreateMeterBar("CritMeter", playPanel.transform,
+                new Color(1f, 0.85f, 0.2f), "CRIT");
+            var critMeterRect = critMeterObj.GetComponent<RectTransform>();
+            critMeterRect.anchorMin = new Vector2(0, 0);
+            critMeterRect.anchorMax = new Vector2(0, 0);
+            critMeterRect.pivot = new Vector2(0, 0);
+            critMeterRect.anchoredPosition = new Vector2(20, 90);
+            critMeterRect.sizeDelta = new Vector2(350, 45);
+
+            var critUI = critMeterObj.AddComponent<CritMeterUI>();
+            SetSerializedField(critUI, "fillImage", critMeterObj.transform.Find("Fill").GetComponent<Image>());
+            SetSerializedField(critUI, "valueText", critMeterObj.transform.Find("ValueText").GetComponent<TextMeshProUGUI>());
+            SetSerializedField(critUI, "meterRoot", critMeterObj);
+
+            // Notification Container
             var notifContainer = new GameObject("NotificationContainer");
-            notifContainer.transform.SetParent(canvasObj.transform, false);
+            notifContainer.transform.SetParent(playPanel.transform, false);
             var notifRect = notifContainer.AddComponent<RectTransform>();
             notifRect.anchorMin = Vector2.zero;
             notifRect.anchorMax = Vector2.one;
             notifRect.offsetMin = Vector2.zero;
             notifRect.offsetMax = Vector2.zero;
 
-            // Create notification prefab template
             var notifPrefab = new GameObject("NotificationText");
-            notifPrefab.transform.SetParent(canvasObj.transform, false);
+            notifPrefab.transform.SetParent(playPanel.transform, false);
             var notifTMP = notifPrefab.AddComponent<TextMeshProUGUI>();
             notifTMP.fontSize = 36;
             notifTMP.fontStyle = FontStyles.Bold;
@@ -135,22 +178,20 @@ namespace Sean.Combat.Editor
             notifPrefabRect.sizeDelta = new Vector2(200, 50);
             notifPrefab.SetActive(false);
 
-            // Notification UI component
             var notifUI = notifContainer.AddComponent<CombatNotificationUI>();
             SetSerializedField(notifUI, "notificationPrefab", notifPrefab);
             SetSerializedField(notifUI, "canvas", canvas);
 
-            // === Game Over Panel ===
+            // Game Over Panel
             var gameOverPanel = new GameObject("GameOverPanel");
-            gameOverPanel.transform.SetParent(canvasObj.transform, false);
+            gameOverPanel.transform.SetParent(playPanel.transform, false);
             var goRect = gameOverPanel.AddComponent<RectTransform>();
             goRect.anchorMin = new Vector2(0.5f, 0.5f);
             goRect.anchorMax = new Vector2(0.5f, 0.5f);
-            goRect.sizeDelta = new Vector2(400, 250);
+            goRect.sizeDelta = new Vector2(450, 280);
             var goImage = gameOverPanel.AddComponent<Image>();
             goImage.color = new Color(0, 0, 0, 0.85f);
 
-            // Result text
             var resultTextObj = new GameObject("ResultText");
             resultTextObj.transform.SetParent(gameOverPanel.transform, false);
             var resultTMP = resultTextObj.AddComponent<TextMeshProUGUI>();
@@ -160,61 +201,24 @@ namespace Sean.Combat.Editor
             resultTMP.alignment = TextAlignmentOptions.Center;
             resultTMP.raycastTarget = false;
             var resultRect = resultTextObj.GetComponent<RectTransform>();
-            resultRect.anchorMin = new Vector2(0, 0.5f);
+            resultRect.anchorMin = new Vector2(0, 0.55f);
             resultRect.anchorMax = new Vector2(1, 1);
             resultRect.offsetMin = new Vector2(10, 10);
             resultRect.offsetMax = new Vector2(-10, -10);
 
             // Restart button
-            var restartObj = new GameObject("RestartButton");
-            restartObj.transform.SetParent(gameOverPanel.transform, false);
-            var btnImage = restartObj.AddComponent<Image>();
-            btnImage.color = new Color(0.3f, 0.3f, 0.4f);
-            var btn = restartObj.AddComponent<Button>();
-            var btnRect = restartObj.GetComponent<RectTransform>();
-            btnRect.anchorMin = new Vector2(0.25f, 0.1f);
-            btnRect.anchorMax = new Vector2(0.75f, 0.4f);
-            btnRect.offsetMin = Vector2.zero;
-            btnRect.offsetMax = Vector2.zero;
+            var restartObj = CreateUIButton("RestartButton", gameOverPanel.transform, "RESTART",
+                new Vector2(0.05f, 0.1f), new Vector2(0.48f, 0.45f));
+            var restartBtn = restartObj.GetComponent<Button>();
 
-            var btnTextObj = new GameObject("Text");
-            btnTextObj.transform.SetParent(restartObj.transform, false);
-            var btnTMP = btnTextObj.AddComponent<TextMeshProUGUI>();
-            btnTMP.text = "RESTART";
-            btnTMP.fontSize = 28;
-            btnTMP.alignment = TextAlignmentOptions.Center;
-            btnTMP.color = Color.white;
-            btnTMP.raycastTarget = false;
-            var btnTextRect = btnTextObj.GetComponent<RectTransform>();
-            btnTextRect.anchorMin = Vector2.zero;
-            btnTextRect.anchorMax = Vector2.one;
-            btnTextRect.offsetMin = Vector2.zero;
-            btnTextRect.offsetMax = Vector2.zero;
+            // Customize button
+            var customizeObj = CreateUIButton("CustomizeButton", gameOverPanel.transform, "CUSTOMIZE",
+                new Vector2(0.52f, 0.1f), new Vector2(0.95f, 0.45f));
+            var customizeBtn = customizeObj.GetComponent<Button>();
 
-            // === CombatHUD ===
-            var hudComponent = canvasObj.AddComponent<CombatHUD>();
-            SetSerializedField(hudComponent, "gameOverPanel", gameOverPanel);
-            SetSerializedField(hudComponent, "resultText", resultTMP);
-            SetSerializedField(hudComponent, "restartButton", btn);
-
-            // === EventSystem ===
-            var eventSystemObj = new GameObject("EventSystem");
-            eventSystemObj.AddComponent<UnityEngine.EventSystems.EventSystem>();
-            eventSystemObj.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
-
-            // === CombatManager ===
-            var managerObj = new GameObject("CombatManager");
-            var combatManager = managerObj.AddComponent<CombatManager>();
-            SetSerializedField(combatManager, "playerEnergy", playerEnergy);
-            SetSerializedField(combatManager, "enemyEnergy", enemyEnergy);
-            SetSerializedField(combatManager, "hud", hudComponent);
-
-            // Wire CombatHUD -> CombatManager
-            SetSerializedField(hudComponent, "combatManager", combatManager);
-
-            // === Controls hint text ===
+            // Controls hint
             var controlsObj = new GameObject("ControlsHint");
-            controlsObj.transform.SetParent(canvasObj.transform, false);
+            controlsObj.transform.SetParent(playPanel.transform, false);
             var controlsTMP = controlsObj.AddComponent<TextMeshProUGUI>();
             controlsTMP.text = "WASD = Parry (directional)  |  Up Arrow = Punch  |  Space = Dodge";
             controlsTMP.fontSize = 18;
@@ -228,6 +232,135 @@ namespace Sean.Combat.Editor
             controlsRect.anchoredPosition = new Vector2(0, -10);
             controlsRect.sizeDelta = new Vector2(0, 30);
 
+            // ==========================================
+            // === CUSTOMIZE PANEL (full opaque, initially visible) ===
+            // ==========================================
+            var customizePanel = new GameObject("CustomizePanel");
+            customizePanel.transform.SetParent(canvasObj.transform, false);
+            var custRect = customizePanel.AddComponent<RectTransform>();
+            custRect.anchorMin = Vector2.zero;
+            custRect.anchorMax = Vector2.one;
+            custRect.offsetMin = Vector2.zero;
+            custRect.offsetMax = Vector2.zero;
+
+            // Dark background
+            var custBg = customizePanel.AddComponent<Image>();
+            custBg.color = new Color(0.1f, 0.1f, 0.15f, 1f);
+
+            // Title
+            var titleObj = new GameObject("Title");
+            titleObj.transform.SetParent(customizePanel.transform, false);
+            var titleTMP = titleObj.AddComponent<TextMeshProUGUI>();
+            titleTMP.text = "COMBAT CUSTOMIZATION";
+            titleTMP.fontSize = 36;
+            titleTMP.fontStyle = FontStyles.Bold;
+            titleTMP.color = Color.white;
+            titleTMP.alignment = TextAlignmentOptions.Center;
+            titleTMP.raycastTarget = false;
+            var titleRect = titleObj.GetComponent<RectTransform>();
+            titleRect.anchorMin = new Vector2(0, 1);
+            titleRect.anchorMax = new Vector2(1, 1);
+            titleRect.pivot = new Vector2(0.5f, 1);
+            titleRect.anchoredPosition = new Vector2(0, -15);
+            titleRect.sizeDelta = new Vector2(0, 50);
+
+            // Scroll View
+            var scrollObj = new GameObject("ScrollView");
+            scrollObj.transform.SetParent(customizePanel.transform, false);
+            var scrollRect = scrollObj.AddComponent<RectTransform>();
+            scrollRect.anchorMin = new Vector2(0.05f, 0.08f);
+            scrollRect.anchorMax = new Vector2(0.95f, 0.92f);
+            scrollRect.offsetMin = Vector2.zero;
+            scrollRect.offsetMax = Vector2.zero;
+
+            var scrollImage = scrollObj.AddComponent<Image>();
+            scrollImage.color = new Color(0.12f, 0.12f, 0.18f, 0.5f);
+
+            var scrollMask = scrollObj.AddComponent<Mask>();
+            scrollMask.showMaskGraphic = true;
+
+            var scrollComponent = scrollObj.AddComponent<ScrollRect>();
+            scrollComponent.horizontal = false;
+            scrollComponent.vertical = true;
+            scrollComponent.movementType = ScrollRect.MovementType.Elastic;
+            scrollComponent.scrollSensitivity = 30f;
+
+            // Viewport
+            var viewportObj = new GameObject("Viewport");
+            viewportObj.transform.SetParent(scrollObj.transform, false);
+            var viewportRect = viewportObj.AddComponent<RectTransform>();
+            viewportRect.anchorMin = Vector2.zero;
+            viewportRect.anchorMax = Vector2.one;
+            viewportRect.offsetMin = Vector2.zero;
+            viewportRect.offsetMax = Vector2.zero;
+
+            // Content (this is what CombatCustomizationUI populates)
+            var contentObj = new GameObject("Content");
+            contentObj.transform.SetParent(viewportObj.transform, false);
+            var contentObjRect = contentObj.AddComponent<RectTransform>();
+            contentObjRect.anchorMin = new Vector2(0, 1);
+            contentObjRect.anchorMax = new Vector2(1, 1);
+            contentObjRect.pivot = new Vector2(0.5f, 1);
+            contentObjRect.sizeDelta = new Vector2(0, 0);
+
+            var vertLayout = contentObj.AddComponent<VerticalLayoutGroup>();
+            vertLayout.childControlWidth = true;
+            vertLayout.childControlHeight = false;
+            vertLayout.childForceExpandWidth = true;
+            vertLayout.childForceExpandHeight = false;
+            vertLayout.spacing = 3;
+            vertLayout.padding = new RectOffset(10, 10, 10, 10);
+
+            var contentFitter = contentObj.AddComponent<ContentSizeFitter>();
+            contentFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            scrollComponent.content = contentObjRect;
+            scrollComponent.viewport = viewportRect;
+
+            // Play Button (bottom of customize panel)
+            var playBtnObj = CreateUIButton("PlayButton", customizePanel.transform, "PLAY",
+                new Vector2(0.35f, 0.01f), new Vector2(0.65f, 0.06f));
+            var playBtnImage = playBtnObj.GetComponent<Image>();
+            playBtnImage.color = new Color(0.2f, 0.6f, 0.2f);
+            var playBtn = playBtnObj.GetComponent<Button>();
+
+            // CombatCustomizationUI component
+            var custUI = customizePanel.AddComponent<CombatCustomizationUI>();
+            SetSerializedField(custUI, "contentParent", contentObj.transform);
+            SetSerializedField(custUI, "playButton", playBtn);
+
+            // === EventSystem ===
+            var eventSystemObj = new GameObject("EventSystem");
+            eventSystemObj.AddComponent<UnityEngine.EventSystems.EventSystem>();
+            eventSystemObj.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
+
+            // === CombatManager ===
+            var managerObj = new GameObject("CombatManager");
+            var combatManager = managerObj.AddComponent<CombatManager>();
+            SetSerializedField(combatManager, "playerEnergy", playerEnergy);
+            SetSerializedField(combatManager, "enemyEnergy", enemyEnergy);
+
+            // === CombatMenuManager ===
+            var menuManagerObj = new GameObject("CombatMenuManager");
+            var menuManager = menuManagerObj.AddComponent<CombatMenuManager>();
+            SetSerializedField(menuManager, "customizePanel", customizePanel);
+            SetSerializedField(menuManager, "playPanel", playPanel);
+            SetSerializedField(menuManager, "combatManager", combatManager);
+
+            // Wire CombatCustomizationUI -> menuManager
+            SetSerializedField(custUI, "menuManager", menuManager);
+
+            // === CombatHUD ===
+            var hudComponent = playPanel.AddComponent<CombatHUD>();
+            SetSerializedField(hudComponent, "gameOverPanel", gameOverPanel);
+            SetSerializedField(hudComponent, "resultText", resultTMP);
+            SetSerializedField(hudComponent, "restartButton", restartBtn);
+            SetSerializedField(hudComponent, "customizeButton", customizeBtn);
+            SetSerializedField(hudComponent, "combatManager", combatManager);
+            SetSerializedField(hudComponent, "menuManager", menuManager);
+
+            SetSerializedField(combatManager, "hud", hudComponent);
+
             // Save scene
             string scenePath = "Assets/Sean/Scenes/CombatDemo.unity";
             EditorSceneManager.SaveScene(scene, scenePath);
@@ -235,7 +368,104 @@ namespace Sean.Combat.Editor
             AssetDatabase.Refresh();
 
             Debug.Log($"Combat Demo scene built and saved to {scenePath}");
-            Debug.Log("All values are editable directly on the Player/Enemy GameObjects in the Inspector!");
+            Debug.Log("Use the Customize panel to adjust settings, then click PLAY!");
+        }
+
+        private static GameObject CreateUIButton(string name, Transform parent, string text,
+            Vector2 anchorMin, Vector2 anchorMax)
+        {
+            var obj = new GameObject(name);
+            obj.transform.SetParent(parent, false);
+            var image = obj.AddComponent<Image>();
+            image.color = new Color(0.3f, 0.3f, 0.4f);
+            var btn = obj.AddComponent<Button>();
+            btn.targetGraphic = image;
+
+            var rect = obj.GetComponent<RectTransform>();
+            rect.anchorMin = anchorMin;
+            rect.anchorMax = anchorMax;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+
+            var textObj = new GameObject("Text");
+            textObj.transform.SetParent(obj.transform, false);
+            var tmp = textObj.AddComponent<TextMeshProUGUI>();
+            tmp.text = text;
+            tmp.fontSize = 24;
+            tmp.fontStyle = FontStyles.Bold;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.color = Color.white;
+            tmp.raycastTarget = false;
+            var textRect = textObj.GetComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = Vector2.zero;
+            textRect.offsetMax = Vector2.zero;
+
+            return obj;
+        }
+
+        private static GameObject CreateMeterBar(string name, Transform parent,
+            Color fillColor, string label)
+        {
+            var barObj = new GameObject(name);
+            barObj.transform.SetParent(parent, false);
+            barObj.AddComponent<RectTransform>();
+
+            var bgObj = new GameObject("Background");
+            bgObj.transform.SetParent(barObj.transform, false);
+            var bgImage = bgObj.AddComponent<Image>();
+            bgImage.color = new Color(0.2f, 0.2f, 0.2f, 0.8f);
+            var bgRect = bgObj.GetComponent<RectTransform>();
+            bgRect.anchorMin = Vector2.zero;
+            bgRect.anchorMax = Vector2.one;
+            bgRect.offsetMin = Vector2.zero;
+            bgRect.offsetMax = Vector2.zero;
+
+            var fillObj = new GameObject("Fill");
+            fillObj.transform.SetParent(barObj.transform, false);
+            var fillImage = fillObj.AddComponent<Image>();
+            fillImage.color = fillColor;
+            fillImage.type = Image.Type.Filled;
+            fillImage.fillMethod = Image.FillMethod.Horizontal;
+            fillImage.fillAmount = 1f;
+            var fillRect = fillObj.GetComponent<RectTransform>();
+            fillRect.anchorMin = new Vector2(0, 0);
+            fillRect.anchorMax = new Vector2(1, 1);
+            fillRect.offsetMin = new Vector2(4, 4);
+            fillRect.offsetMax = new Vector2(-4, -16);
+
+            var labelObj = new GameObject("Label");
+            labelObj.transform.SetParent(barObj.transform, false);
+            var labelTMP = labelObj.AddComponent<TextMeshProUGUI>();
+            labelTMP.text = label;
+            labelTMP.fontSize = 13;
+            labelTMP.fontStyle = FontStyles.Bold;
+            labelTMP.alignment = TextAlignmentOptions.Center;
+            labelTMP.color = Color.white;
+            labelTMP.raycastTarget = false;
+            var labelRect = labelObj.GetComponent<RectTransform>();
+            labelRect.anchorMin = new Vector2(0, 0.55f);
+            labelRect.anchorMax = new Vector2(1, 1);
+            labelRect.offsetMin = Vector2.zero;
+            labelRect.offsetMax = Vector2.zero;
+
+            var valueObj = new GameObject("ValueText");
+            valueObj.transform.SetParent(barObj.transform, false);
+            var valueTMP = valueObj.AddComponent<TextMeshProUGUI>();
+            valueTMP.text = "0 / 0";
+            valueTMP.fontSize = 16;
+            valueTMP.fontStyle = FontStyles.Bold;
+            valueTMP.alignment = TextAlignmentOptions.Center;
+            valueTMP.color = Color.white;
+            valueTMP.raycastTarget = false;
+            var valueRect = valueObj.GetComponent<RectTransform>();
+            valueRect.anchorMin = new Vector2(0, 0);
+            valueRect.anchorMax = new Vector2(1, 0.6f);
+            valueRect.offsetMin = Vector2.zero;
+            valueRect.offsetMax = Vector2.zero;
+
+            return barObj;
         }
 
         private static GameObject CreateArrow(string name, Transform parent, Vector3 localPos, float zRotation)
@@ -262,7 +492,6 @@ namespace Sean.Combat.Editor
             barObj.transform.SetParent(parent, false);
             barObj.AddComponent<RectTransform>();
 
-            // Background
             var bgObj = new GameObject("Background");
             bgObj.transform.SetParent(barObj.transform, false);
             var bgImage = bgObj.AddComponent<Image>();
@@ -273,7 +502,6 @@ namespace Sean.Combat.Editor
             bgRect.offsetMin = Vector2.zero;
             bgRect.offsetMax = Vector2.zero;
 
-            // Fill
             var fillObj = new GameObject("Fill");
             fillObj.transform.SetParent(barObj.transform, false);
             var fillImage = fillObj.AddComponent<Image>();
@@ -287,7 +515,6 @@ namespace Sean.Combat.Editor
             fillRect.offsetMin = new Vector2(4, 4);
             fillRect.offsetMax = new Vector2(-4, -20);
 
-            // Label
             var labelObj = new GameObject("Label");
             labelObj.transform.SetParent(barObj.transform, false);
             var labelTMP = labelObj.AddComponent<TextMeshProUGUI>();
@@ -303,7 +530,6 @@ namespace Sean.Combat.Editor
             labelRect.offsetMin = Vector2.zero;
             labelRect.offsetMax = Vector2.zero;
 
-            // Value text
             var valueObj = new GameObject("ValueText");
             valueObj.transform.SetParent(barObj.transform, false);
             var valueTMP = valueObj.AddComponent<TextMeshProUGUI>();
@@ -319,7 +545,6 @@ namespace Sean.Combat.Editor
             valueRect.offsetMin = Vector2.zero;
             valueRect.offsetMax = Vector2.zero;
 
-            // EnergyBarUI component
             var barUI = barObj.AddComponent<EnergyBarUI>();
             SetSerializedField(barUI, "trackedFighter", (int)fighterType);
             SetSerializedField(barUI, "fillImage", fillImage);

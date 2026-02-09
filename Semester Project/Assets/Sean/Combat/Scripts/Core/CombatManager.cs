@@ -21,11 +21,6 @@ namespace Sean.Combat
             CombatEvents.OnFighterDefeated -= HandleFighterDefeated;
         }
 
-        private void Start()
-        {
-            StartCombat();
-        }
-
         public void StartCombat()
         {
             _combatOver = false;
@@ -33,6 +28,9 @@ namespace Sean.Combat
 
             playerEnergy.Initialize();
             enemyEnergy.Initialize();
+
+            if (hud != null)
+                hud.HideGameOver();
 
             CombatEvents.RaiseCombatStarted();
         }
@@ -50,8 +48,7 @@ namespace Sean.Combat
         public void RestartCombat()
         {
             Time.timeScale = 1f;
-            CombatEvents.ClearAll();
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            StartCombat();
         }
     }
 }

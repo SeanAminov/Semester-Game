@@ -31,6 +31,21 @@ namespace Sean.Combat
         // Combat started
         public static event System.Action OnCombatStarted;
 
+        // Posture changed (current, max)
+        public static event System.Action<int, int> OnPostureChanged;
+
+        // Enemy posture broken (stun duration)
+        public static event System.Action<float> OnEnemyPostureBroken;
+
+        // Crit meter changed (current, max)
+        public static event System.Action<int, int> OnCritMeterChanged;
+
+        // Crit activated
+        public static event System.Action OnCritActivated;
+
+        // Block activated
+        public static event System.Action OnBlockActivated;
+
         // Raise helpers
         public static void RaiseTelegraph(AttackDirection dir, float duration) =>
             OnEnemyTelegraph?.Invoke(dir, duration);
@@ -59,6 +74,21 @@ namespace Sean.Combat
         public static void RaiseCombatStarted() =>
             OnCombatStarted?.Invoke();
 
+        public static void RaisePostureChanged(int current, int max) =>
+            OnPostureChanged?.Invoke(current, max);
+
+        public static void RaiseEnemyPostureBroken(float stunDuration) =>
+            OnEnemyPostureBroken?.Invoke(stunDuration);
+
+        public static void RaiseCritMeterChanged(int current, int max) =>
+            OnCritMeterChanged?.Invoke(current, max);
+
+        public static void RaiseCritActivated() =>
+            OnCritActivated?.Invoke();
+
+        public static void RaiseBlockActivated() =>
+            OnBlockActivated?.Invoke();
+
         // Clear all subscribers (called on scene reload to prevent leaks)
         public static void ClearAll()
         {
@@ -71,6 +101,11 @@ namespace Sean.Combat
             OnEnemyStunned = null;
             OnNotificationRequested = null;
             OnCombatStarted = null;
+            OnPostureChanged = null;
+            OnEnemyPostureBroken = null;
+            OnCritMeterChanged = null;
+            OnCritActivated = null;
+            OnBlockActivated = null;
         }
     }
 }
