@@ -1,16 +1,14 @@
-// Auto-generated C# wrapper for CombatActions.inputactions
-// In Unity, you can regenerate this by selecting the .inputactions asset
-// and enabling "Generate C# Class" in the Inspector.
-
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace Sean.Combat
 {
-    public class CombatActions : IInputActionCollection2, IDisposable
+    public class CombatActions : IDisposable
     {
         public InputActionAsset asset { get; }
+        private CombatActionMap _combat;
+        public CombatActionMap Combat => _combat;
 
         public CombatActions()
         {
@@ -50,40 +48,8 @@ namespace Sean.Combat
             UnityEngine.Object.Destroy(asset);
         }
 
-        // IInputActionCollection2 implementation
-        public InputBinding? bindingMask
-        {
-            get => asset.bindingMask;
-            set => asset.bindingMask = value;
-        }
-
-        public ReadOnlyArray<InputDevice>? devices
-        {
-            get => asset.devices;
-            set => asset.devices = value;
-        }
-
-        public ReadOnlyArray<InputControlScheme> controlSchemes => asset.controlSchemes;
-
-        public bool Contains(InputAction action) => asset.Contains(action);
-
-        public System.Collections.Generic.IEnumerator<InputAction> GetEnumerator() => asset.GetEnumerator();
-
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
-
         public void Enable() => asset.Enable();
-
         public void Disable() => asset.Disable();
-
-        public InputAction FindAction(string actionNameOrId, bool throwIfNotFound = false) =>
-            asset.FindAction(actionNameOrId, throwIfNotFound);
-
-        public int FindBinding(InputBinding bindingMask, out InputAction action) =>
-            asset.FindBinding(bindingMask, out action);
-
-        // Combat action map
-        private CombatActionMap _combat;
-        public CombatActionMap Combat => _combat;
 
         public class CombatActionMap
         {
