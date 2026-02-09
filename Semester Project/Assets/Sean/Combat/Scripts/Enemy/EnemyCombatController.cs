@@ -5,10 +5,26 @@ namespace Sean.Combat
 {
     public class EnemyCombatController : MonoBehaviour
     {
-        [SerializeField] private EnemyProfileSO profile;
-        [SerializeField] private CombatConfigSO combatConfig;
         [SerializeField] private EnemyEnergy energy;
         [SerializeField] private FighterVisual visual;
+
+        [Header("--- Attack Timing (seconds) ---")]
+        [SerializeField] private float telegraphDurationMin = 0.5f;
+        [SerializeField] private float telegraphDurationMax = 1.0f;
+        [SerializeField] private float attackCooldownMin = 1.5f;
+        [SerializeField] private float attackCooldownMax = 3.0f;
+        [SerializeField] private float vulnerabilityWindow = 0.2f;
+
+        [Header("--- Energy Costs ---")]
+        [SerializeField] private int attackEnergyCost = 3;
+        [SerializeField] private int attackDamage = 5;
+
+        [Header("--- Stun ---")]
+        [SerializeField] private float parryStunDuration = 1.0f;
+
+        [Header("--- Visual ---")]
+        [SerializeField] private Color hitColor = Color.red;
+        [SerializeField] private float hitFlashDuration = 0.15f;
 
         private EnemyState _state = EnemyState.Idle;
         private bool _combatActive;
@@ -54,14 +70,14 @@ namespace Sean.Combat
             while (_combatActive)
             {
                 // Wait for cooldown
-                float cooldown = Random.Range(profile.attackCooldownMin, profile.attackCooldownMax);
+                float cooldown = Random.Range(attackCooldownMin, attackCooldownMax);
                 yield return new WaitForSeconds(cooldown);
 
                 if (!_combatActive || _state != EnemyState.Idle) continue;
 
                 // Pick random direction
                 AttackDirection direction = (AttackDirection)Random.Range(0, 4);
-                float telegraphDuration = Random.Range(profile.telegraphDurationMin, profile.telegraphDurationMax);
+                float telegraphDuration = Random.Range(telegraphDurationMin, telegraphDurationMax);
 
                 // Telegraph phase
                 _state = EnemyState.Telegraphing;
@@ -72,11 +88,11 @@ namespace Sean.Combat
 
                 // Attack lands
                 _state = EnemyState.Attacking;
-                energy.ModifyEnergy(-profile.attackEnergyCost);
+                energy.ModifyEnergy(-attackEnergyCost);
                 CombatEvents.RaiseAttackLand(direction);
 
                 // Brief vulnerability window after attack
-                yield return new WaitForSeconds(combatConfig.enemyVulnerabilityWindow);
+                yield return new WaitForSeconds(vulnerabilityWindow);
 
                 if (_state == EnemyState.Attacking)
                     _state = EnemyState.Idle;
@@ -89,7 +105,7 @@ namespace Sean.Combat
             {
                 // Enemy gets stunned on parry
                 StopAllCoroutines();
-                StartCoroutine(StunCoroutine(profile.parryStunDuration));
+                StartCoroutine(StunCoroutine(parryStunDuration));
             }
         }
 
@@ -97,7 +113,7 @@ namespace Sean.Combat
         {
             _state = EnemyState.Stunned;
             CombatEvents.RaiseEnemyStunned(duration);
-            visual.FlashColor(Color.white, duration); // flash white while stunned
+            visual.FlashColor(Color.white, duration);
             yield return new WaitForSeconds(duration);
 
             if (!_combatActive) yield break;
@@ -111,7 +127,7 @@ namespace Sean.Combat
             if (!_combatActive || _state == EnemyState.Defeated) return;
 
             energy.ModifyEnergy(-damage);
-            visual.FlashColor(combatConfig.hitColor, combatConfig.hitFlashDuration);
+            visual.FlashColor(hitColor, hitFlashDuration);
             CombatEvents.RaiseNotification($"-{damage}", transform.position);
         }
     }

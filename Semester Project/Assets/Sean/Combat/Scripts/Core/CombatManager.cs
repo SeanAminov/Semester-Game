@@ -5,8 +5,6 @@ namespace Sean.Combat
 {
     public class CombatManager : MonoBehaviour
     {
-        [SerializeField] private CombatConfigSO config;
-        [SerializeField] private EnemyProfileSO enemyProfile;
         [SerializeField] private PlayerEnergy playerEnergy;
         [SerializeField] private EnemyEnergy enemyEnergy;
         [SerializeField] private CombatHUD hud;
@@ -33,8 +31,8 @@ namespace Sean.Combat
             _combatOver = false;
             Time.timeScale = 1f;
 
-            playerEnergy.Initialize(config);
-            enemyEnergy.Initialize(enemyProfile);
+            playerEnergy.Initialize();
+            enemyEnergy.Initialize();
 
             CombatEvents.RaiseCombatStarted();
         }

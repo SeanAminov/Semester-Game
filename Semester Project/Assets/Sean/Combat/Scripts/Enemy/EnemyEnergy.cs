@@ -4,7 +4,8 @@ namespace Sean.Combat
 {
     public class EnemyEnergy : MonoBehaviour
     {
-        [SerializeField] private EnemyProfileSO profile;
+        [Header("--- Starting Energy ---")]
+        [SerializeField] private int startingEnergy = 50;
 
         private int _currentEnergy;
         private int _maxEnergy;
@@ -12,10 +13,9 @@ namespace Sean.Combat
         public int CurrentEnergy => _currentEnergy;
         public int MaxEnergy => _maxEnergy;
 
-        public void Initialize(EnemyProfileSO enemyProfile)
+        public void Initialize()
         {
-            profile = enemyProfile;
-            _maxEnergy = profile.startingEnergy;
+            _maxEnergy = startingEnergy;
             _currentEnergy = _maxEnergy;
             CombatEvents.RaiseEnergyChanged(FighterType.Enemy, _currentEnergy, _maxEnergy);
         }

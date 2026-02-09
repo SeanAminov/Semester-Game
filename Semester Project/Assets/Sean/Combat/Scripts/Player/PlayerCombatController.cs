@@ -5,9 +5,29 @@ namespace Sean.Combat
 {
     public class PlayerCombatController : MonoBehaviour
     {
-        [SerializeField] private CombatConfigSO config;
         [SerializeField] private PlayerEnergy energy;
         [SerializeField] private FighterVisual visual;
+
+        [Header("--- Timing (seconds) ---")]
+        [SerializeField] private float parryDuration = 0.3f;
+        [SerializeField] private float dodgeDuration = 0.4f;
+        [SerializeField] private float punchDuration = 0.3f;
+
+        [Header("--- Energy Costs ---")]
+        [SerializeField] private int punchEnergyCost = 3;
+        [SerializeField] private int dodgeEnergyCost = 2;
+        [SerializeField] private int parryEnergyGain = 5;
+        [SerializeField] private int playerDamageTaken = 5;
+
+        [Header("--- Damage ---")]
+        [SerializeField] private int punchDamage = 3;
+
+        [Header("--- Colors ---")]
+        [SerializeField] private Color parryColor = Color.blue;
+        [SerializeField] private Color dodgeColor = Color.green;
+        [SerializeField] private Color punchColor = Color.yellow;
+        [SerializeField] private Color hitColor = Color.red;
+        [SerializeField] private float hitFlashDuration = 0.15f;
 
         private CombatActions _input;
         private PlayerState _state = PlayerState.Idle;
@@ -62,13 +82,13 @@ namespace Sean.Combat
 
             _state = PlayerState.Parrying;
             _parryDirection = direction;
-            visual.FlashColor(config.parryColor, config.parryDuration);
+            visual.FlashColor(parryColor, parryDuration);
             StartCoroutine(ParryCoroutine());
         }
 
         private IEnumerator ParryCoroutine()
         {
-            yield return new WaitForSeconds(config.parryDuration);
+            yield return new WaitForSeconds(parryDuration);
             if (_state == PlayerState.Parrying)
                 _state = PlayerState.Idle;
         }
@@ -76,17 +96,17 @@ namespace Sean.Combat
         private void TryDodge()
         {
             if (!_combatActive || _state != PlayerState.Idle) return;
-            if (!energy.HasEnergy(config.dodgeEnergyCost)) return;
+            if (!energy.HasEnergy(dodgeEnergyCost)) return;
 
             _state = PlayerState.Dodging;
-            energy.ModifyEnergy(-config.dodgeEnergyCost);
-            visual.FlashColor(config.dodgeColor, config.dodgeDuration);
+            energy.ModifyEnergy(-dodgeEnergyCost);
+            visual.FlashColor(dodgeColor, dodgeDuration);
             StartCoroutine(DodgeCoroutine());
         }
 
         private IEnumerator DodgeCoroutine()
         {
-            yield return new WaitForSeconds(config.dodgeDuration);
+            yield return new WaitForSeconds(dodgeDuration);
             if (_state == PlayerState.Dodging)
                 _state = PlayerState.Idle;
         }
@@ -94,19 +114,19 @@ namespace Sean.Combat
         private void TryPunch()
         {
             if (!_combatActive || _state != PlayerState.Idle) return;
-            if (!energy.HasEnergy(config.punchEnergyCost)) return;
+            if (!energy.HasEnergy(punchEnergyCost)) return;
 
             _state = PlayerState.Punching;
-            energy.ModifyEnergy(-config.punchEnergyCost);
-            visual.FlashColor(config.punchColor, config.punchDuration);
-            CombatEvents.RaisePlayerAttack(config.punchDamage);
+            energy.ModifyEnergy(-punchEnergyCost);
+            visual.FlashColor(punchColor, punchDuration);
+            CombatEvents.RaisePlayerAttack(punchDamage);
             CombatEvents.RaiseNotification("PUNCH!", transform.position);
             StartCoroutine(PunchCoroutine());
         }
 
         private IEnumerator PunchCoroutine()
         {
-            yield return new WaitForSeconds(config.punchDuration);
+            yield return new WaitForSeconds(punchDuration);
             if (_state == PlayerState.Punching)
                 _state = PlayerState.Idle;
         }
@@ -117,22 +137,19 @@ namespace Sean.Combat
 
             if (_state == PlayerState.Parrying && _parryDirection == direction)
             {
-                // Successful parry
-                energy.ModifyEnergy(config.parryEnergyGain);
+                energy.ModifyEnergy(parryEnergyGain);
                 CombatEvents.RaiseDefenseResult(CombatResult.Parry, direction);
                 CombatEvents.RaiseNotification("PARRY!", transform.position);
             }
             else if (_state == PlayerState.Dodging)
             {
-                // Successful dodge
                 CombatEvents.RaiseDefenseResult(CombatResult.Dodge, direction);
                 CombatEvents.RaiseNotification("DODGE!", transform.position);
             }
             else
             {
-                // Player gets hit
-                energy.ModifyEnergy(-config.playerDamageTaken);
-                visual.FlashColor(config.hitColor, config.hitFlashDuration);
+                energy.ModifyEnergy(-playerDamageTaken);
+                visual.FlashColor(hitColor, hitFlashDuration);
                 CombatEvents.RaiseDefenseResult(CombatResult.Hit, direction);
                 CombatEvents.RaiseNotification("HIT!", transform.position);
             }

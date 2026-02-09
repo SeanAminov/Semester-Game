@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f20e68ccc417f8140b2171ade7658725, type: 3}
+  m_Name: CombatConfig
+  m_EditorClassIdentifier: Assembly-CSharp::Sean.Combat.CombatConfigSO
+  playerStartingEnergy: 20
+  punchEnergyCost: 3
+  dodgeEnergyCost: 2
+  parryEnergyGain: 5
+  playerDamageTaken: 5
+  punchDamage: 3
+  parryDuration: 0.3
+  dodgeDuration: 0.4
+  enemyVulnerabilityWindow: 0.2
+  punchDuration: 0.3
+  hitFlashDuration: 0.15
+  notificationDuration: 0.8
+  notificationFloatSpeed: 1.5
+  parryColor: {r: 0, g: 0, b: 1, a: 1}
+  dodgeColor: {r: 0, g: 1, b: 0, a: 1}
+  hitColor: {r: 1, g: 0, b: 0, a: 1}
+  punchColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}

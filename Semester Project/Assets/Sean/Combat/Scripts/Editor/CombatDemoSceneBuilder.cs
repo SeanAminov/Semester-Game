@@ -25,7 +25,6 @@ namespace Sean.Combat.Editor
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.15f, 0.15f, 0.2f);
             cameraObj.AddComponent<AudioListener>();
-            // Add URP camera data
             cameraObj.AddComponent<UniversalAdditionalCameraData>();
             cameraObj.tag = "MainCamera";
 
@@ -33,24 +32,6 @@ namespace Sean.Combat.Editor
             var lightObj = new GameObject("Global Light 2D");
             var light2d = lightObj.AddComponent<Light2D>();
             light2d.lightType = Light2D.LightType.Global;
-
-            // === Create ScriptableObject assets if they don't exist ===
-            var configPath = "Assets/Sean/Combat/ScriptableObjects/Definitions/CombatConfig.asset";
-            var profilePath = "Assets/Sean/Combat/ScriptableObjects/Definitions/EnemyProfile_Basic.asset";
-
-            var config = AssetDatabase.LoadAssetAtPath<CombatConfigSO>(configPath);
-            if (config == null)
-            {
-                config = ScriptableObject.CreateInstance<CombatConfigSO>();
-                AssetDatabase.CreateAsset(config, configPath);
-            }
-
-            var profile = AssetDatabase.LoadAssetAtPath<EnemyProfileSO>(profilePath);
-            if (profile == null)
-            {
-                profile = ScriptableObject.CreateInstance<EnemyProfileSO>();
-                AssetDatabase.CreateAsset(profile, profilePath);
-            }
 
             // === Player (white square) ===
             var playerObj = new GameObject("Player");
@@ -64,8 +45,7 @@ namespace Sean.Combat.Editor
             var playerVisual = playerObj.AddComponent<FighterVisual>();
             var playerController = playerObj.AddComponent<PlayerCombatController>();
 
-            // Wire player serialized fields via SerializedObject
-            SetSerializedField(playerController, "config", config);
+            // Wire player serialized fields
             SetSerializedField(playerController, "energy", playerEnergy);
             SetSerializedField(playerController, "visual", playerVisual);
             SetSerializedField(playerVisual, "spriteRenderer", playerSR);
@@ -85,8 +65,6 @@ namespace Sean.Combat.Editor
             var dirIndicator = enemyObj.AddComponent<DirectionIndicator>();
 
             // Wire enemy serialized fields
-            SetSerializedField(enemyController, "profile", profile);
-            SetSerializedField(enemyController, "combatConfig", config);
             SetSerializedField(enemyController, "energy", enemyEnergy);
             SetSerializedField(enemyController, "visual", enemyVisual);
             SetSerializedField(enemyVisual, "spriteRenderer", enemySR);
@@ -115,10 +93,8 @@ namespace Sean.Combat.Editor
 
             // === Player Energy Bar ===
             var playerBarObj = CreateEnergyBar("PlayerEnergyBar", canvasObj.transform,
-                new Vector2(0, 0), new Vector2(0, 0), // anchored bottom-left
                 new Color(0.2f, 0.8f, 1f), "PLAYER", FighterType.Player);
 
-            // Position: bottom-left
             var playerBarRect = playerBarObj.GetComponent<RectTransform>();
             playerBarRect.anchorMin = new Vector2(0, 0);
             playerBarRect.anchorMax = new Vector2(0, 0);
@@ -128,7 +104,6 @@ namespace Sean.Combat.Editor
 
             // === Enemy Energy Bar ===
             var enemyBarObj = CreateEnergyBar("EnemyEnergyBar", canvasObj.transform,
-                new Vector2(1, 0), new Vector2(1, 0),
                 new Color(1f, 0.3f, 0.3f), "ENEMY", FighterType.Enemy);
 
             var enemyBarRect = enemyBarObj.GetComponent<RectTransform>();
@@ -147,7 +122,7 @@ namespace Sean.Combat.Editor
             notifRect.offsetMin = Vector2.zero;
             notifRect.offsetMax = Vector2.zero;
 
-            // Create notification prefab template (will be used as prefab reference)
+            // Create notification prefab template
             var notifPrefab = new GameObject("NotificationText");
             notifPrefab.transform.SetParent(canvasObj.transform, false);
             var notifTMP = notifPrefab.AddComponent<TextMeshProUGUI>();
@@ -164,7 +139,6 @@ namespace Sean.Combat.Editor
             var notifUI = notifContainer.AddComponent<CombatNotificationUI>();
             SetSerializedField(notifUI, "notificationPrefab", notifPrefab);
             SetSerializedField(notifUI, "canvas", canvas);
-            SetSerializedField(notifUI, "config", config);
 
             // === Game Over Panel ===
             var gameOverPanel = new GameObject("GameOverPanel");
@@ -231,8 +205,6 @@ namespace Sean.Combat.Editor
             // === CombatManager ===
             var managerObj = new GameObject("CombatManager");
             var combatManager = managerObj.AddComponent<CombatManager>();
-            SetSerializedField(combatManager, "config", config);
-            SetSerializedField(combatManager, "enemyProfile", profile);
             SetSerializedField(combatManager, "playerEnergy", playerEnergy);
             SetSerializedField(combatManager, "enemyEnergy", enemyEnergy);
             SetSerializedField(combatManager, "hud", hudComponent);
@@ -263,7 +235,7 @@ namespace Sean.Combat.Editor
             AssetDatabase.Refresh();
 
             Debug.Log($"Combat Demo scene built and saved to {scenePath}");
-            Debug.Log("ScriptableObject assets created at Assets/Sean/Combat/ScriptableObjects/Definitions/");
+            Debug.Log("All values are editable directly on the Player/Enemy GameObjects in the Inspector!");
         }
 
         private static GameObject CreateArrow(string name, Transform parent, Vector3 localPos, float zRotation)
@@ -284,7 +256,7 @@ namespace Sean.Combat.Editor
         }
 
         private static GameObject CreateEnergyBar(string name, Transform parent,
-            Vector2 anchorMin, Vector2 anchorMax, Color fillColor, string label, FighterType fighterType)
+            Color fillColor, string label, FighterType fighterType)
         {
             var barObj = new GameObject(name);
             barObj.transform.SetParent(parent, false);
@@ -331,7 +303,7 @@ namespace Sean.Combat.Editor
             labelRect.offsetMin = Vector2.zero;
             labelRect.offsetMax = Vector2.zero;
 
-            // Value text (e.g. "12 / 20")
+            // Value text
             var valueObj = new GameObject("ValueText");
             valueObj.transform.SetParent(barObj.transform, false);
             var valueTMP = valueObj.AddComponent<TextMeshProUGUI>();
@@ -358,11 +330,9 @@ namespace Sean.Combat.Editor
 
         private static Sprite CreateSquareSprite()
         {
-            // Use Unity's built-in square sprite if available
             var builtIn = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
             if (builtIn != null) return builtIn;
 
-            // Fallback: create a simple white texture
             var tex = new Texture2D(64, 64);
             var pixels = new Color[64 * 64];
             for (int i = 0; i < pixels.Length; i++) pixels[i] = Color.white;
@@ -373,7 +343,6 @@ namespace Sean.Combat.Editor
 
         private static Sprite CreateCircleSprite()
         {
-            // Create a circle texture
             int size = 64;
             var tex = new Texture2D(size, size);
             var pixels = new Color[size * size];
@@ -381,13 +350,11 @@ namespace Sean.Combat.Editor
             float radius = size / 2f - 1;
 
             for (int y = 0; y < size; y++)
-            {
                 for (int x = 0; x < size; x++)
                 {
                     float dist = Vector2.Distance(new Vector2(x, y), new Vector2(center, center));
                     pixels[y * size + x] = dist <= radius ? Color.white : Color.clear;
                 }
-            }
 
             tex.SetPixels(pixels);
             tex.Apply();
@@ -397,22 +364,18 @@ namespace Sean.Combat.Editor
 
         private static Sprite CreateTriangleSprite()
         {
-            // Create an upward-pointing triangle texture
             int size = 32;
             var tex = new Texture2D(size, size);
             var pixels = new Color[size * size];
 
             for (int y = 0; y < size; y++)
-            {
                 for (int x = 0; x < size; x++)
                 {
                     float halfWidth = (float)y / size * (size / 2f);
                     float center = size / 2f;
                     pixels[y * size + x] = (x >= center - halfWidth && x <= center + halfWidth)
-                        ? Color.white
-                        : Color.clear;
+                        ? Color.white : Color.clear;
                 }
-            }
 
             tex.SetPixels(pixels);
             tex.Apply();

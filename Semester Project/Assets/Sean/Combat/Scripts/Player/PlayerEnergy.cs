@@ -4,7 +4,8 @@ namespace Sean.Combat
 {
     public class PlayerEnergy : MonoBehaviour
     {
-        [SerializeField] private CombatConfigSO config;
+        [Header("--- Starting Energy ---")]
+        [SerializeField] private int startingEnergy = 20;
 
         private int _currentEnergy;
         private int _maxEnergy;
@@ -12,10 +13,9 @@ namespace Sean.Combat
         public int CurrentEnergy => _currentEnergy;
         public int MaxEnergy => _maxEnergy;
 
-        public void Initialize(CombatConfigSO combatConfig)
+        public void Initialize()
         {
-            config = combatConfig;
-            _maxEnergy = config.playerStartingEnergy;
+            _maxEnergy = startingEnergy;
             _currentEnergy = _maxEnergy;
             CombatEvents.RaiseEnergyChanged(FighterType.Player, _currentEnergy, _maxEnergy);
         }
