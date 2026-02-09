@@ -3028,12 +3028,12 @@ MonoBehaviour:
   visual: {fileID: 1547038738}
   parryDuration: 0.3
   dodgeDuration: 0.4
-  punchDuration: 1
-  punchEnergyCost: 0
-  dodgeEnergyCost: 1
-  parryEnergyGain: 5
+  punchDuration: 0.5
+  punchEnergyCost: 5
+  dodgeEnergyCost: 5
+  parryEnergyGain: 8
   playerDamageTaken: 5
-  punchDamage: 3
+  punchDamage: 5
   parryColor: {r: 0, g: 0, b: 1, a: 1}
   dodgeColor: {r: 0, g: 1, b: 0, a: 1}
   punchColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
@@ -3256,7 +3256,7 @@ MonoBehaviour:
   attackCooldownMin: 1.5
   attackCooldownMax: 3
   vulnerabilityWindow: 0.2
-  attackEnergyCost: 3
+  attackEnergyCost: 0
   attackDamage: 5
   parryStunDuration: 1
   hitColor: {r: 1, g: 0, b: 0, a: 1}
