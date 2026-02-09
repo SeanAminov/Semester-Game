@@ -16,6 +16,14 @@ namespace Sean.Combat
         public void ShowCustomizeScreen()
         {
             Time.timeScale = 1f;
+
+            // Clean up any lingering combat visuals
+            var notifUI = FindObjectOfType<CombatNotificationUI>();
+            if (notifUI != null) notifUI.ClearAllNotifications();
+
+            var visuals = FindObjectsOfType<FighterVisual>();
+            foreach (var v in visuals) v.ResetColor();
+
             if (customizePanel != null) customizePanel.SetActive(true);
             if (playPanel != null) playPanel.SetActive(false);
         }

@@ -22,11 +22,36 @@ namespace Sean.Combat
         private void OnEnable()
         {
             CombatEvents.OnNotificationRequested += HandleNotification;
+            CombatEvents.OnCombatStarted += ClearAllNotifications;
+            CombatEvents.OnFighterDefeated += OnFighterDefeated;
         }
 
         private void OnDisable()
         {
             CombatEvents.OnNotificationRequested -= HandleNotification;
+            CombatEvents.OnCombatStarted -= ClearAllNotifications;
+            CombatEvents.OnFighterDefeated -= OnFighterDefeated;
+        }
+
+        private void OnFighterDefeated(FighterType type)
+        {
+            ClearAllNotifications();
+        }
+
+        public void ClearAllNotifications()
+        {
+            StopAllCoroutines();
+            // Return all active notifications to pool
+            foreach (Transform child in canvas.transform)
+            {
+                if (child.gameObject == notificationPrefab) continue;
+                var tmp = child.GetComponent<TextMeshProUGUI>();
+                if (tmp != null && child.gameObject.activeSelf)
+                {
+                    child.gameObject.SetActive(false);
+                    _pool.Enqueue(child.gameObject);
+                }
+            }
         }
 
         private void HandleNotification(string text, Vector2 worldPos)

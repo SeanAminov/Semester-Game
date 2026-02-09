@@ -17,6 +17,23 @@ namespace Sean.Combat
             _originalColor = spriteRenderer.color;
         }
 
+        private void OnEnable()
+        {
+            CombatEvents.OnCombatStarted += ResetColor;
+            CombatEvents.OnFighterDefeated += OnFighterDefeated;
+        }
+
+        private void OnDisable()
+        {
+            CombatEvents.OnCombatStarted -= ResetColor;
+            CombatEvents.OnFighterDefeated -= OnFighterDefeated;
+        }
+
+        private void OnFighterDefeated(FighterType type)
+        {
+            ResetColor();
+        }
+
         public void FlashColor(Color color, float duration)
         {
             if (_flashCoroutine != null)
