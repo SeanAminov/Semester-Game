@@ -46,7 +46,7 @@ namespace Sean.Combat
         {
             Time.timeScale = 1f;
             if (menuManager != null)
-                menuManager.ShowCustomizeScreen();
+                menuManager.ShowMainMenu();
         }
     }
 }

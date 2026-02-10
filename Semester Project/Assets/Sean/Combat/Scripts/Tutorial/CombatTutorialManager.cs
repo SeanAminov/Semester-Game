@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using TMPro;
 
 namespace Sean.Combat
@@ -622,8 +623,32 @@ namespace Sean.Combat
             // Small delay to prevent accidental skip
             yield return new WaitForSecondsRealtime(0.3f);
 
-            while (!Input.anyKeyDown)
+            // Use Input System instead of legacy Input.anyKeyDown
+            while (!AnyInputPressed())
                 yield return null;
+        }
+
+        private bool AnyInputPressed()
+        {
+            var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.anyKey.wasPressedThisFrame)
+                return true;
+
+            var mouse = Mouse.current;
+            if (mouse != null && (mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame))
+                return true;
+
+            var gamepad = Gamepad.current;
+            if (gamepad != null)
+            {
+                foreach (var control in gamepad.allControls)
+                {
+                    if (control is UnityEngine.InputSystem.Controls.ButtonControl btn && btn.wasPressedThisFrame)
+                        return true;
+                }
+            }
+
+            return false;
         }
 
         private IEnumerator TelegraphFade(float duration)
