@@ -164,25 +164,74 @@ public class TutorialSceneSetup : EditorWindow
             Debug.Log("Tutorial panel already exists, skipping.");
         }
 
-        // ─── Add a "Back to Menu" button on the Customize panel ───
+        // ─── Add "Back" and "Tutorial" buttons at the bottom of the Customize panel ───
         var customizePanel = menuSO.FindProperty("customizePanel").objectReferenceValue as GameObject;
         if (customizePanel != null)
         {
-            var existingBack = FindChildRecursive(customizePanel.transform, "BackToMenuButton");
-            if (existingBack == null)
+            // Remove any old floating tutorial/back buttons that aren't anchored to the bottom
+            RemoveOldButton(customizePanel.transform, "TutorialButton");
+            RemoveOldButton(customizePanel.transform, "BackButton");
+
+            // Back button - anchored to bottom-left
+            SetupBottomButton(customizePanel.transform, "BackToMenuButton", "< BACK",
+                new Vector2(0.15f, 0.01f), new Vector2(0.35f, 0.06f),
+                new Color(0.5f, 0.5f, 0.5f, 1f),
+                menuManager.ShowMainMenu);
+
+            // Tutorial button - anchored to bottom-center
+            SetupBottomButton(customizePanel.transform, "TutorialOnCustomizeButton", "TUTORIAL",
+                new Vector2(0.37f, 0.01f), new Vector2(0.57f, 0.06f),
+                new Color(0.2f, 0.6f, 0.9f, 1f),
+                menuManager.ShowTutorial);
+
+            // Reposition Play button to bottom-right to match
+            var playBtn = FindChildRecursive(customizePanel.transform, "PlayButton");
+            if (playBtn != null)
             {
-                var backBtn = CreateButton(customizePanel.transform, "BackToMenuButton", "< BACK",
-                    new Vector2(-300, -60), new Vector2(160, 50),
-                    new Color(0.5f, 0.5f, 0.5f, 1f));
-                UnityEditor.Events.UnityEventTools.AddPersistentListener(
-                    backBtn.GetComponent<Button>().onClick,
-                    new UnityEngine.Events.UnityAction(menuManager.ShowMainMenu));
-                Debug.Log("Back button added to customize panel.");
+                var rt = playBtn.GetComponent<RectTransform>();
+                rt.anchorMin = new Vector2(0.59f, 0.01f);
+                rt.anchorMax = new Vector2(0.85f, 0.06f);
+                rt.offsetMin = Vector2.zero;
+                rt.offsetMax = Vector2.zero;
             }
         }
 
         EditorUtility.SetDirty(menuManager);
         Debug.Log("Tutorial setup complete! Save the scene (Ctrl+S).");
+    }
+
+    private static void RemoveOldButton(Transform parent, string name)
+    {
+        var old = FindChildRecursive(parent, name);
+        if (old != null)
+        {
+            Object.DestroyImmediate(old.gameObject);
+            Debug.Log($"Removed old floating button: {name}");
+        }
+    }
+
+    private static void SetupBottomButton(Transform parent, string name, string label,
+        Vector2 anchorMin, Vector2 anchorMax, Color color,
+        UnityEngine.Events.UnityAction onClick)
+    {
+        var existing = FindChildRecursive(parent, name);
+        if (existing == null)
+        {
+            var btn = CreateAnchoredButton(parent, name, label, anchorMin, anchorMax, color);
+            UnityEditor.Events.UnityEventTools.AddPersistentListener(
+                btn.GetComponent<Button>().onClick, onClick);
+            Debug.Log($"{label} button added to customize panel.");
+        }
+        else
+        {
+            var rt = existing.GetComponent<RectTransform>();
+            rt.anchorMin = anchorMin;
+            rt.anchorMax = anchorMax;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = Vector2.zero;
+        }
     }
 
     private static Transform FindChildRecursive(Transform parent, string name)
@@ -228,6 +277,41 @@ public class TutorialSceneSetup : EditorWindow
         tmp.color = Color.white;
         tmp.enableWordWrapping = true;
         tmp.richText = true;
+
+        return go;
+    }
+
+    private static GameObject CreateAnchoredButton(Transform parent, string name,
+        string label, Vector2 anchorMin, Vector2 anchorMax,
+        Color? buttonColor = null)
+    {
+        var go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
+        go.transform.SetParent(parent, false);
+
+        var rt = go.GetComponent<RectTransform>();
+        rt.anchorMin = anchorMin;
+        rt.anchorMax = anchorMax;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+
+        var img = go.GetComponent<Image>();
+        img.color = buttonColor ?? new Color(0.2f, 0.6f, 0.9f, 1f);
+
+        var labelGO = new GameObject("Label", typeof(RectTransform));
+        labelGO.transform.SetParent(go.transform, false);
+
+        var labelRT = labelGO.GetComponent<RectTransform>();
+        labelRT.anchorMin = Vector2.zero;
+        labelRT.anchorMax = Vector2.one;
+        labelRT.offsetMin = Vector2.zero;
+        labelRT.offsetMax = Vector2.zero;
+
+        var tmp = labelGO.AddComponent<TextMeshProUGUI>();
+        tmp.text = label;
+        tmp.fontSize = 24;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.color = Color.white;
+        tmp.fontStyle = FontStyles.Bold;
 
         return go;
     }
