@@ -10,6 +10,16 @@ namespace Sean.Combat
         public int CurrentEnergy => _currentEnergy;
         public int MaxEnergy => _maxEnergy;
 
+        private void OnEnable()
+        {
+            CombatEvents.OnParryEnemyEnergyDrain += HandleParryDrain;
+        }
+
+        private void OnDisable()
+        {
+            CombatEvents.OnParryEnemyEnergyDrain -= HandleParryDrain;
+        }
+
         public void Initialize()
         {
             var config = CombatRuntimeConfig.Instance;
@@ -27,6 +37,11 @@ namespace Sean.Combat
             {
                 CombatEvents.RaiseFighterDefeated(FighterType.Enemy);
             }
+        }
+
+        private void HandleParryDrain(int drainAmount)
+        {
+            ModifyEnergy(-drainAmount);
         }
     }
 }

@@ -15,6 +15,8 @@ namespace Sean.Combat
         public float ParryWindowDuration = 0.3f;
         public bool ParryRefillsEnergy = true;
         public int ParryEnergyRefill = 6;
+        public bool ParryDrainsEnemyEnergy = false;
+        public int ParryEnemyEnergyDrain = 3;
 
         // Dodge
         public bool DodgeEnabled = true;

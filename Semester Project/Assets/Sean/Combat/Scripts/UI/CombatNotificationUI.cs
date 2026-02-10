@@ -9,6 +9,7 @@ namespace Sean.Combat
     {
         [SerializeField] private GameObject notificationPrefab;
         [SerializeField] private Canvas canvas;
+        [SerializeField] private Transform notificationParent;
         [SerializeField] private CombatConfigSO config;
 
         private readonly Queue<GameObject> _pool = new Queue<GameObject>();
@@ -42,7 +43,8 @@ namespace Sean.Combat
         {
             StopAllCoroutines();
             // Return all active notifications to pool
-            foreach (Transform child in canvas.transform)
+            Transform parent = notificationParent != null ? notificationParent : canvas.transform;
+            foreach (Transform child in parent)
             {
                 if (child.gameObject == notificationPrefab) continue;
                 var tmp = child.GetComponent<TextMeshProUGUI>();
@@ -120,7 +122,8 @@ namespace Sean.Combat
                 return _pool.Dequeue();
             }
 
-            GameObject obj = Instantiate(notificationPrefab, canvas.transform);
+            Transform parent = notificationParent != null ? notificationParent : canvas.transform;
+            GameObject obj = Instantiate(notificationPrefab, parent);
             return obj;
         }
     }

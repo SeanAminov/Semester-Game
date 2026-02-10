@@ -38,6 +38,7 @@ namespace Sean.Combat
 
             _input.Combat.Punch.performed += _ => TryPunch();
             _input.Combat.Dodge.performed += _ => TryDodge();
+            _input.Combat.Crit.performed += _ => TryActivateCrit();
 
             CombatEvents.OnEnemyAttackLand += HandleEnemyAttack;
             CombatEvents.OnCombatStarted += OnCombatStarted;
@@ -236,6 +237,9 @@ namespace Sean.Combat
                 // Successful parry
                 if (Config.ParryRefillsEnergy)
                     energy.ModifyEnergy(Config.ParryEnergyRefill);
+
+                if (Config.ParryDrainsEnemyEnergy)
+                    CombatEvents.RaiseParryEnemyEnergyDrain(Config.ParryEnemyEnergyDrain);
 
                 CombatEvents.RaiseDefenseResult(CombatResult.Parry, direction);
                 CombatEvents.RaiseNotification("PARRY!", transform.position);

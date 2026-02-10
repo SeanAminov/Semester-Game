@@ -24,7 +24,8 @@ namespace Sean.Combat
                 { ""name"": ""ParryLeft"", ""type"": ""Button"", ""id"": ""a1b2c3d4-0002-0003-0001-000000000001"" },
                 { ""name"": ""ParryRight"", ""type"": ""Button"", ""id"": ""a1b2c3d4-0002-0004-0001-000000000001"" },
                 { ""name"": ""Punch"", ""type"": ""Button"", ""id"": ""a1b2c3d4-0002-0005-0001-000000000001"" },
-                { ""name"": ""Dodge"", ""type"": ""Button"", ""id"": ""a1b2c3d4-0002-0006-0001-000000000001"" }
+                { ""name"": ""Dodge"", ""type"": ""Button"", ""id"": ""a1b2c3d4-0002-0006-0001-000000000001"" },
+                { ""name"": ""Crit"", ""type"": ""Button"", ""id"": ""a1b2c3d4-0002-0007-0001-000000000001"" }
             ],
             ""bindings"": [
                 { ""path"": ""<Keyboard>/w"", ""action"": ""ParryUp"" },
@@ -32,7 +33,8 @@ namespace Sean.Combat
                 { ""path"": ""<Keyboard>/a"", ""action"": ""ParryLeft"" },
                 { ""path"": ""<Keyboard>/d"", ""action"": ""ParryRight"" },
                 { ""path"": ""<Keyboard>/upArrow"", ""action"": ""Punch"" },
-                { ""path"": ""<Keyboard>/space"", ""action"": ""Dodge"" }
+                { ""path"": ""<Keyboard>/space"", ""action"": ""Dodge"" },
+                { ""path"": ""<Keyboard>/e"", ""action"": ""Crit"" }
             ]
         }
     ],
@@ -61,6 +63,7 @@ namespace Sean.Combat
             public InputAction ParryRight { get; }
             public InputAction Punch { get; }
             public InputAction Dodge { get; }
+            public InputAction Crit { get; }
 
             public CombatActionMap(InputActionAsset asset)
             {
@@ -71,6 +74,7 @@ namespace Sean.Combat
                 ParryRight = _map.FindAction("ParryRight", throwIfNotFound: true);
                 Punch = _map.FindAction("Punch", throwIfNotFound: true);
                 Dodge = _map.FindAction("Dodge", throwIfNotFound: true);
+                Crit = _map.FindAction("Crit", throwIfNotFound: true);
             }
 
             public void Enable() => _map.Enable();

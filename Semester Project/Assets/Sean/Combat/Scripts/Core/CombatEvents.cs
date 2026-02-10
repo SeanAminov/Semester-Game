@@ -46,6 +46,9 @@ namespace Sean.Combat
         // Block activated
         public static event System.Action OnBlockActivated;
 
+        // Parry drains enemy energy (drain amount)
+        public static event System.Action<int> OnParryEnemyEnergyDrain;
+
         // Raise helpers
         public static void RaiseTelegraph(AttackDirection dir, float duration) =>
             OnEnemyTelegraph?.Invoke(dir, duration);
@@ -89,6 +92,9 @@ namespace Sean.Combat
         public static void RaiseBlockActivated() =>
             OnBlockActivated?.Invoke();
 
+        public static void RaiseParryEnemyEnergyDrain(int amount) =>
+            OnParryEnemyEnergyDrain?.Invoke(amount);
+
         // Clear all subscribers (called on scene reload to prevent leaks)
         public static void ClearAll()
         {
@@ -106,6 +112,7 @@ namespace Sean.Combat
             OnCritMeterChanged = null;
             OnCritActivated = null;
             OnBlockActivated = null;
+            OnParryEnemyEnergyDrain = null;
         }
     }
 }

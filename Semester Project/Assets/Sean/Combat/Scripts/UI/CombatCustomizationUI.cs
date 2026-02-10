@@ -55,6 +55,8 @@ namespace Sean.Combat
             CreateFloatSlider("Parry Window (s)", 0.1f, 1f, () => Config.ParryWindowDuration, v => Config.ParryWindowDuration = v);
             CreateToggle("Parry Refills Energy", () => Config.ParryRefillsEnergy, v => Config.ParryRefillsEnergy = v);
             CreateIntSlider("Parry Energy Refill", 0, 20, () => Config.ParryEnergyRefill, v => Config.ParryEnergyRefill = v);
+            CreateToggle("Parry Drains Enemy Energy", () => Config.ParryDrainsEnemyEnergy, v => Config.ParryDrainsEnemyEnergy = v);
+            CreateIntSlider("Enemy Energy Drain", 0, 20, () => Config.ParryEnemyEnergyDrain, v => Config.ParryEnemyEnergyDrain = v);
 
             CreateSpacer();
 

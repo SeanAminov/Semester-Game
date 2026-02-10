@@ -7,6 +7,7 @@ namespace Sean.Combat
         [SerializeField] private GameObject customizePanel;
         [SerializeField] private GameObject playPanel;
         [SerializeField] private CombatManager combatManager;
+        [SerializeField] private CombatHUD hud;
 
         private void Start()
         {
@@ -16,6 +17,9 @@ namespace Sean.Combat
         public void ShowCustomizeScreen()
         {
             Time.timeScale = 1f;
+
+            // Hide game over panel first
+            if (hud != null) hud.HideGameOver();
 
             // Clean up any lingering combat visuals
             var notifUI = FindObjectOfType<CombatNotificationUI>();

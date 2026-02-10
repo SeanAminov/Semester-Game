@@ -181,6 +181,7 @@ namespace Sean.Combat.Editor
             var notifUI = notifContainer.AddComponent<CombatNotificationUI>();
             SetSerializedField(notifUI, "notificationPrefab", notifPrefab);
             SetSerializedField(notifUI, "canvas", canvas);
+            SetSerializedField(notifUI, "notificationParent", notifContainer);
 
             // Game Over Panel
             var gameOverPanel = new GameObject("GameOverPanel");
@@ -220,7 +221,7 @@ namespace Sean.Combat.Editor
             var controlsObj = new GameObject("ControlsHint");
             controlsObj.transform.SetParent(playPanel.transform, false);
             var controlsTMP = controlsObj.AddComponent<TextMeshProUGUI>();
-            controlsTMP.text = "WASD = Parry (directional)  |  Up Arrow = Punch  |  Space = Dodge";
+            controlsTMP.text = "WASD = Parry (directional)  |  Up Arrow = Punch  |  Space = Dodge  |  E = Crit (when ready)";
             controlsTMP.fontSize = 18;
             controlsTMP.alignment = TextAlignmentOptions.Center;
             controlsTMP.color = new Color(1, 1, 1, 0.5f);
@@ -360,6 +361,7 @@ namespace Sean.Combat.Editor
             SetSerializedField(hudComponent, "menuManager", menuManager);
 
             SetSerializedField(combatManager, "hud", hudComponent);
+            SetSerializedField(menuManager, "hud", hudComponent);
 
             // Save scene
             string scenePath = "Assets/Sean/Scenes/CombatDemo.unity";

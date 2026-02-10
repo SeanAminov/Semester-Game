@@ -16,6 +16,8 @@ namespace Sean.Combat
         public float ParryWindowDuration = 0.3f;
         public bool ParryRefillsEnergy = true;
         public int ParryEnergyRefill = 6;
+        public bool ParryDrainsEnemyEnergy = false;
+        public int ParryEnemyEnergyDrain = 3;
 
         [Header("Dodge")]
         public bool DodgeEnabled = true;
@@ -112,6 +114,8 @@ namespace Sean.Combat
             ParryWindowDuration = preset.ParryWindowDuration;
             ParryRefillsEnergy = preset.ParryRefillsEnergy;
             ParryEnergyRefill = preset.ParryEnergyRefill;
+            ParryDrainsEnemyEnergy = preset.ParryDrainsEnemyEnergy;
+            ParryEnemyEnergyDrain = preset.ParryEnemyEnergyDrain;
 
             DodgeEnabled = preset.DodgeEnabled;
             DodgeEnergyCost = preset.DodgeEnergyCost;
