@@ -4,5 +4,5 @@
 **/ 
 public interface IInteractable 
 {
-    void Interact(playerOverworld player); // "Interact()" function to be implemented by Interactable.cs script. 
+    void Interact(); // "Interact()" function to be implemented by Interactable.cs script. 
 }

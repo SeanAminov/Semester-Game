@@ -26,9 +26,9 @@ public class PlayerInteract : MonoBehaviour
                 {
                     float distance = Vector2.Distance(transform.position, hit.transform.position); // Get the distance between the player ("transform.position") and the clicked interactable item ("hit.transform.position"). 
 
-                    if (distance <= 4.0f) // If the interactable item is within 4.0 units of the player, 
+                    if (distance <= 2.5f) // If the interactable item is within 4.0 units of the player, 
                     {
-                        interactable.Interact(GetComponent<playerOverworld>()); // then call the "Interact()" function from Interactable script (which already has IInteractable included) to interact with the item. 
+                        interactable.Interact(); // then call the "Interact()" function from Interactable script (which already has IInteractable included) to interact with the item. 
                     }
                 }
             }
