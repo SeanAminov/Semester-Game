@@ -6,7 +6,8 @@ using UnityEngine;
 using UnityEngine.InputSystem; // New modern Unity input. 
 using UnityEngine.SceneManagement; 
 
-/** Script that allows for player movement based on position of left-mouse click: 
+/** 
+ * Script that allows for player movement based on position of left-mouse click: 
  * Uses Vectors to calculate movement direction of the player (its Rigidbody2D component), normalizing the vector when player is moving.
  **/ 
 public class playerOverworld : MonoBehaviour
@@ -20,7 +21,8 @@ public class playerOverworld : MonoBehaviour
     private bool moving = false; 
     private Vector2 target; // For storing the target for the player's Rigidbody2D to move toward every frame. 
 
-    bool colliding = false; 
+    // Player inventory: 
+    public List<Interactable> inventory = new List<Interactable>(); 
 
     void Start()
     {
@@ -47,7 +49,7 @@ public class playerOverworld : MonoBehaviour
         }
     }
 
-    void FixedUpdate() // Performed only when a left mouse click happens. 
+    void FixedUpdate() // Performed only when a left mouse click happens ("FixedUpdate()" is for physics logic). 
     {
         if (moving) 
         {
@@ -65,5 +67,13 @@ public class playerOverworld : MonoBehaviour
                 rb.linearVelocity = direction.normalized * speed; // Move the player's Rigidbody2D based on the direction vector with the defined speed. 
             }
         }
+    }
+
+    /**
+     * Function to add a picked-up item into the player's inventory: 
+    **/
+    public void addToInventory(Interactable item)
+    {
+        this.inventory.Add(item); // Add interactable item into the player's inventory. 
     }
 }

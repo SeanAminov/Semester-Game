@@ -1,7 +1,8 @@
 // Ethan Le (2/15/2026): 
 using UnityEngine; 
 
-/** Script is to allow for ANY object with a "...Collider2D" component to:
+/** 
+ * Script is to allow for ANY object with a "...Collider2D" component to:
  * a. Be drawn in front if it has a lower Y position. 
  * b. Be drawn behind if it has a higher Y position. 
 **/ 
@@ -14,7 +15,8 @@ public class YSort : MonoBehaviour
         sr = GetComponent<SpriteRenderer>(); // Get object's SpriteRenderer component. 
     }
 
-    /** Function that determines what layer the object should be on:
+    /** 
+     * Function that determines what layer the object should be on:
      * a. Higher sortingOrder = drawn in front. 
      * b. Lower sortingOrder = drawn behind. 
     **/
