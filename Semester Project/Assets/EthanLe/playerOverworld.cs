@@ -6,6 +6,9 @@ using UnityEngine;
 using UnityEngine.InputSystem; // New modern Unity input. 
 using UnityEngine.SceneManagement; 
 
+/** Script that allows for player movement based on position of left-mouse click: 
+ * Uses Vectors to calculate movement direction of the player (its Rigidbody2D component), normalizing the vector when player is moving.
+ **/ 
 public class playerOverworld : MonoBehaviour
 {
     // Player visuals: 
