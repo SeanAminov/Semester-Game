@@ -12,7 +12,7 @@ using UnityEngine.Events;
 public class InventoryManager : MonoBehaviour  
 {
     [Header("Inventory Settings")]
-    [SerializeField] private int maxInventorySize = 1; // Max number of Interactable items the player can hold. 
+    [SerializeField] private int maxInventorySize = 10; // Max number of unique items the player can hold. 
 
     // Events for UI and other systems to listen to: 
     [System.Serializable] 
@@ -23,8 +23,12 @@ public class InventoryManager : MonoBehaviour
     public class ItemAddedEvent : UnityEvent { }
     public ItemAddedEvent OnItemAdded = new ItemAddedEvent(); // Triggered when player collects a new item. 
     
-    // Inventory list (not serialized by Unity, but saved/loaded manually). 
-    private List<Interactable> _inventory = new List<Interactable>(); 
+    [System.Serializable]
+    public class ItemRemovedEvent : UnityEvent { }
+    public ItemRemovedEvent OnItemRemoved = new ItemRemovedEvent(); // Triggered when a player discards an item. 
+
+    // Inventory list (a list of slots filled with DATA of obtained items). 
+    private List<InventorySlot> _inventory = new(); 
 
     // Singleton instance pattern for easy access: 
     private static InventoryManager _instance; 
@@ -48,7 +52,7 @@ public class InventoryManager : MonoBehaviour
 
     // Create public versions of the private UI and logic properties: 
     // This is to ensure we do not directly manipulate the original private variables immediately (safer). 
-    public List<Interactable> Inventory => new List<Interactable>(_inventory); // Return a copy of the private _inventory List for safety. 
+    public List<InventorySlot> Inventory => new List<InventorySlot>(_inventory); // Return a copy of the private _inventory List for safety. 
     public int MaxSize => maxInventorySize; // Return a copy of the private maxInventorySize int for safety. 
     public int ItemCount => _inventory.Count; // Return a copy of the number of items currently in the private _inventory List for safety. 
     public bool IsFull => _inventory.Count >= maxInventorySize; // Set Full flag as true if player is at the max inventory limit. 
@@ -61,27 +65,41 @@ public class InventoryManager : MonoBehaviour
     }*/
 
     /**
-     * Add an interactable item into the player's inventory if not full. 
+     * Add/update the item's Inventory Slot in the player's inventory if not full. 
     **/ 
-    public bool AddItem(Interactable item) 
+    public void AddItem(ItemData item) 
     {
-        if (IsFull)
+        if (item.Stackable) // Make sure more than 1 of this item can be stored. 
         {
-            return false; 
-        }
+            // If we can store more than 1 of this item, find its appropriate existing slot in the current Inventory. 
+            var existingSlot = _inventory.Find(s => s.UniqueItem == item && s.Quantity < item.MaxStack); 
 
-        _inventory.Add(item); 
-        return true; 
+            if (existingSlot != null) // If the existing slot exists, update its quantity count. 
+            {
+                existingSlot.Quantity++; // Increment the quantity of this existing item. 
+                OnInventoryUpdated?.Invoke(); // Fire event that is being listened to in the InventoryUI.cs script that resets the inventory. 
+                return; 
+            }
+        
+        }
+        
+        if (_inventory.Count < maxInventorySize) // If it is a brand new unique item being obtained, 
+        {
+            _inventory.Add(new InventorySlot(item)); // then add it into a new SEPARATE Inventory slot. 
+            OnInventoryUpdated?.Invoke(); // Fire event that is being listened to in the InventoryUI.cs script that resets the inventory. 
+        }
     }
 
     /** 
-     * Discard an interactable item from the player's inventory. 
+     * Discard a copy of a unique item from the player's inventory. 
     **/
-    public bool DiscardItem(Interactable item)
+    public bool DiscardItem(InventorySlot item)
     {
         if (_inventory.Contains(item))
         {
             _inventory.Remove(item); 
+            OnItemRemoved?.Invoke();
+            OnInventoryUpdated?.Invoke(); 
             return true; 
         }
 

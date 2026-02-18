@@ -8,7 +8,14 @@ using TMPro; // For TextMeshPro component.
 **/ 
 public class Interactable : MonoBehaviour, IInteractable
 {
+    [Header("Item Info")]
+    [SerializeField] private ItemData itemData; // For the data of the actual item. 
+
+    // Create public copy of the item's data to reference in other files:
+    public ItemData dupItemData => itemData;
+
     private GameObject glow; // For visual effect to indicate an interactable item is nearby. 
+    
     private playerOverworld player; // playerOverworld reference. 
     public GameObject popupTextPrefab; // Assign Message prefab through the Inspector. 
     public Transform popupContainer; // Assign UI PopupContainer through the Inspector. 
@@ -42,7 +49,7 @@ public class Interactable : MonoBehaviour, IInteractable
     {
         if (!InventoryManager.Instance.IsFull) // If the player's inventory (one single instance across the whole game) is not yet full, 
         { 
-            InventoryManager.Instance.AddItem(this); // Add the interactable item to the player's inventory. 
+            InventoryManager.Instance.AddItem(itemData); // Add the data of the obtained item to the player's inventory (as an Inventory slot). 
             ShowGainedPopup(); // Call function to show the text after gaining with the item. 
             Destroy(gameObject); // Remove item from the world after picking it up. 
         }
