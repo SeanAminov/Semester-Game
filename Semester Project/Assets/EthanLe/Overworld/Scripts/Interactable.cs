@@ -40,12 +40,20 @@ public class Interactable : MonoBehaviour, IInteractable
 
     public void Interact() // Implement the "Interact()" function defined by the IInteractable.cs interface. 
     {
-        player.addToInventory(this); // Add the interactable item to the player's inventory. 
-        ShowPopup(); // Call function to show the text after interacting with the item. 
-        Destroy(gameObject); // Remove item from the world after picking it up. 
+        if (!InventoryManager.Instance.IsFull) // If the player's inventory (one single instance across the whole game) is not yet full, 
+        { 
+            InventoryManager.Instance.AddItem(this); // Add the interactable item to the player's inventory. 
+            ShowGainedPopup(); // Call function to show the text after gaining with the item. 
+            Destroy(gameObject); // Remove item from the world after picking it up. 
+        }
+
+        else // Otherwise, if player's inventory is full, 
+        {
+            ShowFullPopup(); // Call function to show text with FULL warning message. 
+        }
     }
 
-    private void ShowPopup()
+    private void ShowGainedPopup()
     {
         if (popupTextPrefab != null && popupContainer != null)
         {
@@ -56,7 +64,26 @@ public class Interactable : MonoBehaviour, IInteractable
             TMP_Text textBox = message.GetComponent<TMP_Text>(); // Get the TMP_Text component of the Message prefab. 
             if (textBox != null)
             {
-                textBox.text = "You obtained an object!"; 
+                textBox.text = "You obtained an object! This works."; 
+            }
+
+            // Destroy the Message prefab after two seconds: 
+            Destroy(message, 4f); 
+        }
+    }
+
+    private void ShowFullPopup()
+    {
+        if (popupTextPrefab != null && popupContainer != null)
+        {
+            // Create an instanceof the Message prefab as a child of the PopupContainer: 
+            GameObject message = Instantiate(popupTextPrefab, popupContainer); 
+
+            // Set the text:
+            TMP_Text textBox = message.GetComponent<TMP_Text>(); // Get the TMP_Text component of the Message prefab. 
+            if (textBox != null)
+            {
+                textBox.text = "Your inventory is full! Discard an item!"; 
             }
 
             // Destroy the Message prefab after two seconds: 
