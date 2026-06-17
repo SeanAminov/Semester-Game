@@ -19,6 +19,8 @@ public class InventoryUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI titleText; // Title label. 
     [SerializeField] private Button closeButton; // Button to close the inventory. 
     [SerializeField] private Button inventoryButton; // Button to open the inventory. 
+    private playerOverworld playerWorld; // playerOverworld.cs script.
+    private PlayerInteract playerInteract; // PlayerInteract.cs script. 
 
     [Header("Settings")]
     [SerializeField] private int itemsPerRow = 3; // # of items per row in the grid. 
@@ -37,8 +39,21 @@ public class InventoryUI : MonoBehaviour
         closeButton.onClick.AddListener(OnClose); 
         inventoryPanel.SetActive(false); 
 
+        playerWorld = GameObject.FindGameObjectWithTag("Player").GetComponent<playerOverworld>(); 
+        playerInteract = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerInteract>(); 
+
+        if (playerWorld == null)
+        {
+            Debug.Log("Could not retrieve playerWorld.cs script!");
+        }
+
+        if (playerInteract == null)
+        {
+            Debug.Log("Could not retrieve PlayerInteract.cs script!");
+        }
+
         SubscribeToEvents(); 
-        ResetInventory(); 
+        ResetInventory();  
     }
 
     // Called when the object is destroyed: 
@@ -165,11 +180,15 @@ public class InventoryUI : MonoBehaviour
     void OnClose()
     {
         inventoryPanel.SetActive(false); 
+        playerWorld.enabled = true;
+        playerInteract.enabled = true; 
     }
 
     // Function to open the Inventory UI panel:
     void OnOpen()
     {
         inventoryPanel.SetActive(true); 
+        playerWorld.enabled = false;
+        playerInteract.enabled = false; 
     }
 } 

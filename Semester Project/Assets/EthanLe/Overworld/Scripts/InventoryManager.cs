@@ -32,14 +32,25 @@ public class InventoryManager : MonoBehaviour
 
     // Singleton instance pattern for easy access: 
     private static InventoryManager _instance; 
+    private static bool _isQuitting = false;
+
+    private void OnApplicationQuit()
+    {
+        _isQuitting = true; 
+    }
     
     public static InventoryManager Instance 
     {
         get 
         {  
+            if (_isQuitting) 
+            {
+                return null; 
+            }
+
             if (_instance == null)
             {
-                _instance = FindObjectOfType<InventoryManager>(); 
+                _instance = FindFirstObjectByType<InventoryManager>(); 
                 if (_instance == null)
                 {
                     Debug.LogError("InventoryManager is null!"); 
@@ -86,6 +97,7 @@ public class InventoryManager : MonoBehaviour
         if (_inventory.Count < maxInventorySize) // If it is a brand new unique item being obtained, 
         {
             _inventory.Add(new InventorySlot(item)); // then add it into a new SEPARATE Inventory slot. 
+            OnItemAdded?.Invoke(); 
             OnInventoryUpdated?.Invoke(); // Fire event that is being listened to in the InventoryUI.cs script that resets the inventory. 
         }
     }

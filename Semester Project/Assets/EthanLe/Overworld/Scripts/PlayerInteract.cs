@@ -1,5 +1,6 @@
 // Ethan Le (2/16/2026): 
 using UnityEngine;
+using UnityEngine.EventSystems; // To block clicks when mouse is over a UI component. 
 using UnityEngine.InputSystem; 
 
 /** 
@@ -15,6 +16,11 @@ public class PlayerInteract : MonoBehaviour
     {
         if (Mouse.current.leftButton.wasPressedThisFrame) // Keep a lookout for left mouse click to interact with nearby item.
         {
+            if (EventSystem.current.IsPointerOverGameObject())
+            {
+                return; // Do not move the player if mouse is over a UI component. 
+            }
+
             Vector2 mouseWorld = Camera.main.ScreenToWorldPoint(Mouse.current.position.ReadValue()); // Convert mouse position (where the click happened) into game world position. 
             Collider2D hit = Physics2D.OverlapPoint(mouseWorld); // Get the Collider2D component of the GameObject that the mouse clicked on (AKA, is overlapping). 
 

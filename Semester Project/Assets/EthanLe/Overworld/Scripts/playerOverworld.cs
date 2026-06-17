@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic; 
 using UnityEngine; 
+using UnityEngine.EventSystems; // To block clicks when mouse is over a UI component. 
 using UnityEngine.InputSystem; // New modern Unity input. 
 using UnityEngine.SceneManagement; 
 
@@ -40,6 +41,11 @@ public class playerOverworld : MonoBehaviour
     {
         if (Mouse.current.leftButton.wasPressedThisFrame) // Keep a lookout for left mouse click to move character. 
         { 
+            if (EventSystem.current.IsPointerOverGameObject())
+            {
+                return; // Do not move the player if the mouse is over a UI component. 
+            }
+
             Vector3 mouseWorld3D = mainCamera.ScreenToWorldPoint(Mouse.current.position.ReadValue()); // Convert mouse position (where the click happened) into game world position. 
             target = new Vector2(mouseWorld3D.x, mouseWorld3D.y); // Create a 2D vector based on the clicked world position and store it in "target" so we can track where the Rigidbody2D of the player needs to travel to. 
             moving = true; // Change flag to true so FixedUpdate() can move the Rigidbody2D of the player.  

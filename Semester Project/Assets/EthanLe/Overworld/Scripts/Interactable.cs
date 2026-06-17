@@ -28,7 +28,7 @@ public class Interactable : MonoBehaviour, IInteractable
             glow.SetActive(false); // The glow effect starts out as disabled. 
         }
 
-        player = GameObject.FindObjectOfType<playerOverworld>(); // Automatically get the playerOverworld reference. 
+        player = GameObject.FindFirstObjectByType<playerOverworld>(); // Automatically get the playerOverworld reference. 
         if (player == null) // Safety check. 
         {
             return; 
