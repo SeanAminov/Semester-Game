@@ -17,6 +17,8 @@ public class InventoryUI : MonoBehaviour
     [SerializeField] private GameObject inventoryItemPrefab; // Prefab for each inventory item. 
     [SerializeField] private TextMeshProUGUI itemCountText; // Tracks number of items.
     [SerializeField] private TextMeshProUGUI titleText; // Title label. 
+    [SerializeField] private Button closeButton; // Button to close the inventory. 
+    [SerializeField] private Button inventoryButton; // Button to open the inventory. 
 
     [Header("Settings")]
     [SerializeField] private int itemsPerRow = 3; // # of items per row in the grid. 
@@ -31,6 +33,10 @@ public class InventoryUI : MonoBehaviour
     // Called when script instance is being loaded:
     private void Start()
     {
+        inventoryButton.onClick.AddListener(OnOpen); 
+        closeButton.onClick.AddListener(OnClose); 
+        inventoryPanel.SetActive(false); 
+
         SubscribeToEvents(); 
         ResetInventory(); 
     }
@@ -38,6 +44,8 @@ public class InventoryUI : MonoBehaviour
     // Called when the object is destroyed: 
     private void OnDestroy()
     {
+        inventoryButton.onClick.RemoveAllListeners(); 
+        closeButton.onClick.RemoveAllListeners(); 
         UnsubscribeFromEvents(); 
     }
 
@@ -151,5 +159,17 @@ public class InventoryUI : MonoBehaviour
         {
             Destroy(inventoryGrid.GetChild(i).gameObject); 
         }
+    }
+
+    // Function to close the Inventory UI panel:
+    void OnClose()
+    {
+        inventoryPanel.SetActive(false); 
+    }
+
+    // Function to open the Inventory UI panel:
+    void OnOpen()
+    {
+        inventoryPanel.SetActive(true); 
     }
 } 
