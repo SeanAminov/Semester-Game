@@ -48,15 +48,6 @@ public class InventoryManager : MonoBehaviour
                 return null; 
             }
 
-            if (_instance == null)
-            {
-                _instance = FindFirstObjectByType<InventoryManager>(); 
-                if (_instance == null)
-                {
-                    Debug.LogError("InventoryManager is null!"); 
-                }
-            }
-
             return _instance; 
         }
     } 
@@ -69,11 +60,18 @@ public class InventoryManager : MonoBehaviour
     public bool IsFull => _inventory.Count >= maxInventorySize; // Set Full flag as true if player is at the max inventory limit. 
     // 0 <= -1 
 
-    // Called when the ScriptableObject is loaded (if using persistent storage):
-    /*private void Awake() 
+    // Called at the beginning of the game (persistent Inventory data between scene loads):
+    private void Awake() 
     {
-        LoadInventory(); 
-    }*/
+        if (_instance != null && _instance != this)
+        {
+            Destroy(gameObject); // Destroy the newly created duplicate of the Inventory data if an old data still exists. 
+            return; 
+        } 
+
+        _instance = this; // Otherwise, if an old data does not already exist, this is the first Inventory data to be saved and persist across the game. 
+        DontDestroyOnLoad(gameObject); // Ensure that this old data is not destroyed between different scene loads (ex: between Overworld scene and Combat scene). 
+    }
 
     /**
      * Add/update the item's Inventory Slot in the player's inventory if not full. 
